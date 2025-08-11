@@ -1,0 +1,12 @@
+[package]
+org = "itsme"
+name = "backend"
+version = "1.0.0"
+distribution = "2201.12.7"
+
+[build-options]
+observabilityIncluded = true
+
+[dependencies]
+"ballerina/http" = "2.14.3"
+"ballerinax/mongodb" = "5.1.0"
