@@ -13,8 +13,19 @@ import {
   Wifi,
   Globe,
   Shield,
-  Layers3
+  Layers3,
+  Calculator,
+  Server,
+  Activity,
+  BookOpen,
+  Zap
 } from "lucide-react";
+import { useState } from "react";
+import TCPHandshake from "@/components/networking/TCPHandshake";
+import DNSResolution from "@/components/networking/DNSResolution";
+import OSIModel from "@/components/networking/OSIModel";
+import SubnetCalculator from "@/components/networking/SubnetCalculator";
+import NetworkTopology from "@/components/networking/NetworkTopology";
 
 const networkingTopics = [
   {
@@ -23,7 +34,8 @@ const networkingTopics = [
     description: "Visualize connection establishment and termination",
     duration: "30 min",
     difficulty: "Beginner",
-    icon: <Wifi className="h-5 w-5" />
+    icon: <Wifi className="h-5 w-5" />,
+    component: TCPHandshake
   },
   {
     id: "dns-resolution",
@@ -31,7 +43,8 @@ const networkingTopics = [
     description: "Follow domain name lookups from start to finish",
     duration: "40 min",
     difficulty: "Intermediate",
-    icon: <Globe className="h-5 w-5" />
+    icon: <Globe className="h-5 w-5" />,
+    component: DNSResolution
   },
   {
     id: "osi-model",
@@ -39,24 +52,69 @@ const networkingTopics = [
     description: "Interactive layer-by-layer packet journey",
     duration: "50 min",
     difficulty: "Intermediate",
-    icon: <Layers3 className="h-5 w-5" />
+    icon: <Layers3 className="h-5 w-5" />,
+    component: OSIModel
   },
   {
-    id: "security-protocols",
-    title: "Network Security",
-    description: "HTTPS, TLS, and encryption in network communication",
+    id: "subnet-calculator",
+    title: "Subnet Calculator",
+    description: "Interactive subnet calculation and CIDR practice",
     duration: "45 min",
     difficulty: "Advanced",
-    icon: <Shield className="h-5 w-5" />
+    icon: <Calculator className="h-5 w-5" />,
+    component: SubnetCalculator
+  },
+  {
+    id: "network-topology",
+    title: "Network Topology Builder",
+    description: "Drag-and-drop network design and simulation",
+    duration: "60 min",
+    difficulty: "Advanced",
+    icon: <Server className="h-5 w-5" />,
+    component: NetworkTopology
   }
 ];
 
 export default function Networking() {
+  const [selectedTopic, setSelectedTopic] = useState<string | null>(null);
+  const [activeTab, setActiveTab] = useState("overview");
+
   const difficultyColors = {
     Beginner: "bg-green-100 text-green-800 border-green-200",
     Intermediate: "bg-yellow-100 text-yellow-800 border-yellow-200",
     Advanced: "bg-red-100 text-red-800 border-red-200"
   };
+
+  const selectedComponent = networkingTopics.find(topic => topic.id === selectedTopic)?.component;
+
+  if (selectedTopic && selectedComponent) {
+    const Component = selectedComponent;
+    return (
+      <div className="min-h-screen bg-background">
+        <Header />
+        <div className="container mx-auto px-4 py-8">
+          <div className="flex items-center justify-between mb-6">
+            <div>
+              <Button
+                variant="outline"
+                onClick={() => setSelectedTopic(null)}
+                className="mb-4"
+              >
+                ← Back to Networking Overview
+              </Button>
+              <h1 className="text-3xl font-bold">
+                {networkingTopics.find(t => t.id === selectedTopic)?.title}
+              </h1>
+              <p className="text-muted-foreground">
+                {networkingTopics.find(t => t.id === selectedTopic)?.description}
+              </p>
+            </div>
+          </div>
+          <Component />
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-background">
@@ -72,26 +130,26 @@ export default function Networking() {
             </div>
             
             <h1 className="text-4xl md:text-6xl font-bold leading-tight">
-              Understand Networks
-              <span className="block text-secondary">Through Simulation</span>
+              Master Network Protocols
+              <span className="block text-secondary">Through Interactive Simulations</span>
             </h1>
             
             <p className="text-xl text-white/80 max-w-2xl mx-auto">
-              Master network protocols, packet flow, and communication models through real-time simulations and interactive packet tracing.
+              Explore TCP/IP, DNS, OSI models, subnetting, and network topologies with real-time visualizations and hands-on practice.
             </p>
             
             <div className="flex items-center justify-center space-x-8 text-white/60 text-sm">
               <div className="flex items-center">
-                <Clock className="mr-2 h-4 w-4" />
-                Interactive simulations
+                <Activity className="mr-2 h-4 w-4" />
+                Real-time simulations
               </div>
               <div className="flex items-center">
-                <Users className="mr-2 h-4 w-4" />
-                Real-world scenarios
+                <BookOpen className="mr-2 h-4 w-4" />
+                Interactive learning
               </div>
               <div className="flex items-center">
-                <Award className="mr-2 h-4 w-4" />
-                Hands-on labs
+                <Zap className="mr-2 h-4 w-4" />
+                Hands-on practice
               </div>
             </div>
           </div>
@@ -101,16 +159,70 @@ export default function Networking() {
       {/* Learning Content */}
       <section className="py-16">
         <div className="container mx-auto px-4">
-          <Tabs defaultValue="simulations" className="max-w-6xl mx-auto">
-            <TabsList className="grid w-full grid-cols-3">
+          <Tabs value={activeTab} onValueChange={setActiveTab} className="max-w-6xl mx-auto">
+            <TabsList className="grid w-full grid-cols-4">
+              <TabsTrigger value="overview">Overview</TabsTrigger>
               <TabsTrigger value="simulations">Simulations</TabsTrigger>
-              <TabsTrigger value="packet-tracer">Packet Tracer</TabsTrigger>
-              <TabsTrigger value="labs">Virtual Labs</TabsTrigger>
+              <TabsTrigger value="tools">Tools</TabsTrigger>
+              <TabsTrigger value="practice">Practice</TabsTrigger>
             </TabsList>
+            
+            <TabsContent value="overview" className="mt-8">
+              <div className="grid gap-6">
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="flex items-center">
+                      <Network className="mr-2 h-5 w-5" />
+                      What You'll Learn
+                    </CardTitle>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                      <div className="p-4 border rounded-lg">
+                        <h4 className="font-semibold mb-2">Protocol Understanding</h4>
+                        <p className="text-sm text-muted-foreground">
+                          Deep dive into TCP/IP, UDP, HTTP, DNS, and other essential network protocols
+                        </p>
+                      </div>
+                      <div className="p-4 border rounded-lg">
+                        <h4 className="font-semibold mb-2">Network Architecture</h4>
+                        <p className="text-sm text-muted-foreground">
+                          Learn OSI model, network layers, and how data flows through networks
+                        </p>
+                      </div>
+                      <div className="p-4 border rounded-lg">
+                        <h4 className="font-semibold mb-2">IP Addressing</h4>
+                        <p className="text-sm text-muted-foreground">
+                          Master subnetting, CIDR notation, and IP address management
+                        </p>
+                      </div>
+                      <div className="p-4 border rounded-lg">
+                        <h4 className="font-semibold mb-2">Network Design</h4>
+                        <p className="text-sm text-muted-foreground">
+                          Build and simulate network topologies with routers, switches, and hosts
+                        </p>
+                      </div>
+                      <div className="p-4 border rounded-lg">
+                        <h4 className="font-semibold mb-2">Troubleshooting</h4>
+                        <p className="text-sm text-muted-foreground">
+                          Practice diagnosing and resolving common network issues
+                        </p>
+                      </div>
+                      <div className="p-4 border rounded-lg">
+                        <h4 className="font-semibold mb-2">Security Concepts</h4>
+                        <p className="text-sm text-muted-foreground">
+                          Understand network security, encryption, and secure protocols
+                        </p>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
+              </div>
+            </TabsContent>
             
             <TabsContent value="simulations" className="mt-8">
               <div className="grid gap-6">
-                {networkingTopics.map((topic, index) => (
+                {networkingTopics.slice(0, 3).map((topic, index) => (
                   <Card key={topic.id} className="group hover:shadow-lg transition-all duration-300 hover:-translate-y-1">
                     <CardHeader className="pb-4">
                       <div className="flex items-start justify-between">
@@ -144,7 +256,10 @@ export default function Networking() {
                         <div className="text-sm text-muted-foreground">
                           Module {index + 1} of {networkingTopics.length}
                         </div>
-                        <Button className="bg-hero-gradient hover:opacity-90 transition-opacity">
+                        <Button 
+                          className="bg-hero-gradient hover:opacity-90 transition-opacity"
+                          onClick={() => setSelectedTopic(topic.id)}
+                        >
                           <Play className="mr-2 h-4 w-4" />
                           Start Simulation
                           <ArrowRight className="ml-2 h-4 w-4" />
@@ -156,36 +271,75 @@ export default function Networking() {
               </div>
             </TabsContent>
             
-            <TabsContent value="packet-tracer" className="mt-8">
-              <Card className="h-96 flex items-center justify-center">
-                <div className="text-center space-y-4">
-                  <div className="w-16 h-16 rounded-full bg-primary/10 flex items-center justify-center text-primary mx-auto">
-                    <Network className="h-8 w-8" />
-                  </div>
-                  <h3 className="text-xl font-semibold">Packet Trace Visualizer</h3>
-                  <p className="text-muted-foreground max-w-md">
-                    Capture and analyze network packets in real-time. See how data flows through network layers and understand protocol interactions.
-                  </p>
-                  <Button className="bg-hero-gradient hover:opacity-90 transition-opacity">
-                    Launch Packet Tracer
-                  </Button>
-                </div>
-              </Card>
+            <TabsContent value="tools" className="mt-8">
+              <div className="grid gap-6">
+                {networkingTopics.slice(3).map((topic, index) => (
+                  <Card key={topic.id} className="group hover:shadow-lg transition-all duration-300 hover:-translate-y-1">
+                    <CardHeader className="pb-4">
+                      <div className="flex items-start justify-between">
+                        <div className="flex items-center space-x-3">
+                          <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center text-primary group-hover:bg-primary group-hover:text-primary-foreground transition-colors">
+                            {topic.icon}
+                          </div>
+                          <div>
+                            <CardTitle className="text-lg font-semibold">
+                              {topic.title}
+                            </CardTitle>
+                            <CardDescription className="text-muted-foreground">
+                              {topic.description}
+                            </CardDescription>
+                          </div>
+                        </div>
+                        <div className="flex items-center space-x-2">
+                          <Badge variant="outline" className={difficultyColors[topic.difficulty as keyof typeof difficultyColors]}>
+                            {topic.difficulty}
+                          </Badge>
+                          <Badge variant="outline" className="text-muted-foreground">
+                            <Clock className="mr-1 h-3 w-3" />
+                            {topic.duration}
+                          </Badge>
+                        </div>
+                      </div>
+                    </CardHeader>
+                    
+                    <CardContent>
+                      <div className="flex items-center justify-between">
+                        <div className="text-sm text-muted-foreground">
+                          Tool {index + 1} of {networkingTopics.slice(3).length}
+                        </div>
+                        <Button 
+                          className="bg-hero-gradient hover:opacity-90 transition-opacity"
+                          onClick={() => setSelectedTopic(topic.id)}
+                        >
+                          <Play className="mr-2 h-4 w-4" />
+                          Launch Tool
+                          <ArrowRight className="ml-2 h-4 w-4" />
+                        </Button>
+                      </div>
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
             </TabsContent>
             
-            <TabsContent value="labs" className="mt-8">
+            <TabsContent value="practice" className="mt-8">
               <Card className="h-96 flex items-center justify-center">
                 <div className="text-center space-y-4">
                   <div className="w-16 h-16 rounded-full bg-accent/10 flex items-center justify-center text-accent mx-auto">
                     <Award className="h-8 w-8" />
                   </div>
-                  <h3 className="text-xl font-semibold">Virtual Network Labs</h3>
+                  <h3 className="text-xl font-semibold">Practice Exercises</h3>
                   <p className="text-muted-foreground max-w-md">
-                    Practice networking concepts in safe, virtual environments. Configure routers, set up VLANs, and troubleshoot network issues.
+                    Test your knowledge with interactive quizzes, subnetting challenges, and network troubleshooting scenarios.
                   </p>
-                  <Button className="bg-hero-gradient hover:opacity-90 transition-opacity">
-                    Access Labs
-                  </Button>
+                  <div className="flex space-x-2">
+                    <Button className="bg-hero-gradient hover:opacity-90 transition-opacity">
+                      Start Quiz
+                    </Button>
+                    <Button variant="outline">
+                      View Challenges
+                    </Button>
+                  </div>
                 </div>
               </Card>
             </TabsContent>
