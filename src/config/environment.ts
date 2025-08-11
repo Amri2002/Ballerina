@@ -1,7 +1,7 @@
 // Environment configuration
 export const config = {
   // API Configuration
-  apiBaseUrl: import.meta.env.VITE_API_BASE_URL || 'http://localhost:3002/api',
+  apiBaseUrl: import.meta.env.VITE_API_BASE_URL || 'http://localhost:3001/api',
   
   // App Configuration
   appName: 'CodeVista',
