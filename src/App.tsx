@@ -10,6 +10,7 @@ import Networking from "./pages/Networking";
 import Databases from "./pages/Databases";
 import About from "./pages/About";
 import SignIn from "./pages/SignIn";
+import SignUp from "./pages/SignUp";
 import Dashboard from "./pages/Dashboard";
 import NotFound from "./pages/NotFound";
 
@@ -43,6 +44,11 @@ const App = () => (
             <Route path="/signin" element={
               <PublicRoute>
                 <SignIn />
+              </PublicRoute>
+            } />
+            <Route path="/signup" element={
+              <PublicRoute>
+                <SignUp />
               </PublicRoute>
             } />
             <Route path="/dashboard" element={
