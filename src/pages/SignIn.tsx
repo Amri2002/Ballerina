@@ -13,39 +13,27 @@ export default function SignIn() {
   const [showPassword, setShowPassword] = useState(false);
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
-  const [isLoading, setIsLoading] = useState(false);
-  const { login } = useAuth();
+  const { login, loading, error } = useAuth();
   const navigate = useNavigate();
   const { toast } = useToast();
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-    setIsLoading(true);
     
-    try {
-      const success = await login(email, password);
-      
-      if (success) {
-        toast({
-          title: "Success!",
-          description: "You have been signed in successfully.",
-        });
-        navigate("/dashboard");
-      } else {
-        toast({
-          title: "Invalid credentials",
-          description: "Please check your email and password and try again.",
-          variant: "destructive",
-        });
-      }
-    } catch (error) {
+    const success = await login(email, password);
+    
+    if (success) {
       toast({
-        title: "Error",
-        description: "An error occurred during sign in. Please try again.",
+        title: "Success!",
+        description: "You have been signed in successfully.",
+      });
+      navigate("/dashboard");
+    } else if (error) {
+      toast({
+        title: "Login Failed",
+        description: error,
         variant: "destructive",
       });
-    } finally {
-      setIsLoading(false);
     }
   };
 
@@ -120,16 +108,16 @@ export default function SignIn() {
                   </Link>
                 </div>
 
-                <Button type="submit" disabled={isLoading} className="w-full bg-hero-gradient hover:opacity-90 transition-opacity">
-                  {isLoading ? "Signing in..." : "Sign In"}
+                <Button type="submit" disabled={loading} className="w-full bg-hero-gradient hover:opacity-90 transition-opacity">
+                  {loading ? "Signing in..." : "Sign In"}
                 </Button>
               </form>
 
-              {/* Demo credentials info */}
+              {/* Backend connection info */}
               <div className="mt-4 p-3 bg-muted/50 rounded-lg border">
-                <p className="text-sm font-medium text-muted-foreground mb-2">Demo Credentials:</p>
-                <p className="text-xs text-muted-foreground">Email: test@example.com</p>
-                <p className="text-xs text-muted-foreground">Password: Test1234</p>
+                <p className="text-sm font-medium text-muted-foreground mb-2">Backend Connected:</p>
+                <p className="text-xs text-muted-foreground">Using Ballerina backend with MongoDB</p>
+                <p className="text-xs text-muted-foreground">Create an account or use existing credentials</p>
               </div>
 
               <div className="mt-6">
