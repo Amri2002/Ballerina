@@ -100,8 +100,37 @@ export const networkingApi = {
   },
 
   getTopologies: async (userId: string) => {
-    return apiService.request(`/networking/topology/list/${userId}`, {
+    return apiService.request(`/networking/topology/list?userId=${userId}`, {
       method: 'GET',
+    });
+  },
+
+  getTopologyTypes: async () => {
+    return apiService.request('/networking/topology/types', {
+      method: 'GET',
+    });
+  },
+
+  simulateTopology: async (data: {
+    topologyType: string;
+    simulationConfig?: any;
+    userId: string;
+  }) => {
+    return apiService.request('/networking/topology/simulate', {
+      method: 'POST',
+      body: JSON.stringify(data),
+    });
+  },
+
+  testTopologyFailure: async (data: {
+    topologyType: string;
+    failureScenario: string;
+    devicesToFail?: string[];
+    userId: string;
+  }) => {
+    return apiService.request('/networking/topology/failure-test', {
+      method: 'POST',
+      body: JSON.stringify(data),
     });
   },
 
