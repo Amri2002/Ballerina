@@ -223,6 +223,75 @@ app.post('/api/networking/progress/update', async (req, res) => {
     }
 });
 
+// Add missing networking endpoints
+app.post('/api/networking/protocol/analyze', async (req, res) => {
+    try {
+        const targetUrl = 'http://localhost:3001/api/networking/protocol/analyze';
+        console.log(`🔄 Proxying POST /api/networking/protocol/analyze to ${targetUrl}`);
+        
+        const response = await fetch(targetUrl, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(req.body)
+        });
+        
+        const data = await response.json();
+        console.log(`✅ Response: ${response.status} for protocol analyze`);
+        
+        res.status(response.status).json(data);
+    } catch (error) {
+        console.error(`❌ Error proxying protocol analyze:`, error);
+        res.status(500).json({ error: 'Proxy error', message: error.message });
+    }
+});
+
+app.post('/api/networking/performance/monitor', async (req, res) => {
+    try {
+        const targetUrl = 'http://localhost:3001/api/networking/performance/monitor';
+        console.log(`🔄 Proxying POST /api/networking/performance/monitor to ${targetUrl}`);
+        
+        const response = await fetch(targetUrl, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(req.body)
+        });
+        
+        const data = await response.json();
+        console.log(`✅ Response: ${response.status} for performance monitor`);
+        
+        res.status(response.status).json(data);
+    } catch (error) {
+        console.error(`❌ Error proxying performance monitor:`, error);
+        res.status(500).json({ error: 'Proxy error', message: error.message });
+    }
+});
+
+app.get('/api/networking/analytics/user/:userId', async (req, res) => {
+    try {
+        const targetUrl = `http://localhost:3001/api/networking/analytics/user/${req.params.userId}`;
+        console.log(`🔄 Proxying GET /api/networking/analytics/user/${req.params.userId} to ${targetUrl}`);
+        
+        const response = await fetch(targetUrl, {
+            method: 'GET',
+            headers: {
+                'Content-Type': 'application/json'
+            }
+        });
+        
+        const data = await response.json();
+        console.log(`✅ Response: ${response.status} for analytics user`);
+        
+        res.status(response.status).json(data);
+    } catch (error) {
+        console.error(`❌ Error proxying analytics user:`, error);
+        res.status(500).json({ error: 'Proxy error', message: error.message });
+    }
+});
+
 app.get('/api/networking/status', async (req, res) => {
     try {
         const targetUrl = 'http://localhost:3001/api/networking/status';
