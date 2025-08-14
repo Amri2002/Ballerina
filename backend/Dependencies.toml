@@ -319,6 +319,9 @@ dependencies = [
 	{org = "ballerinax", name = "mongodb"}
 ]
 modules = [
-	{org = "itsme", packageName = "backend", moduleName = "backend"}
+	{org = "itsme", packageName = "backend", moduleName = "backend"},
+	{org = "itsme", packageName = "backend", moduleName = "backend.config"},
+	{org = "itsme", packageName = "backend", moduleName = "backend.models"},
+	{org = "itsme", packageName = "backend", moduleName = "backend.utils"}
 ]
 
