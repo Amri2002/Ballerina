@@ -1,7 +1,7 @@
 import { useState } from "react";
 import { Link, useLocation, useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
-import { Menu, X, BookOpen, Sparkles, User, LogOut } from "lucide-react";
+import { Menu, X, BookOpen, Sparkles, User, LogOut, Loader2 } from "lucide-react";
 import { cn } from "@/lib/utils";
 import { useAuth } from "@/contexts/AuthContext";
 import {
@@ -23,7 +23,7 @@ export function Header() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
   const location = useLocation();
   const navigate = useNavigate();
-  const { user, logout, isAuthenticated } = useAuth();
+  const { user, logout, isAuthenticated, loading } = useAuth();
 
   const toggleMenu = () => setIsMenuOpen(!isMenuOpen);
 
@@ -31,6 +31,30 @@ export function Header() {
     logout();
     navigate("/");
   };
+
+  // Show loading state while authentication is being initialized
+  if (loading) {
+    return (
+      <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
+        <div className="container mx-auto flex h-16 items-center justify-between px-4">
+          {/* Logo */}
+          <Link to="/" className="flex items-center space-x-2 transition-opacity hover:opacity-80">
+            <div className="relative">
+              <BookOpen className="h-8 w-8 text-primary" />
+              <Sparkles className="absolute -top-1 -right-1 h-4 w-4 text-secondary" />
+            </div>
+            <span className="text-xl font-bold text-foreground">CodeVista</span>
+          </Link>
+
+          {/* Loading indicator */}
+          <div className="flex items-center space-x-2">
+            <Loader2 className="h-4 w-4 animate-spin" />
+            <span className="text-sm text-muted-foreground">Loading...</span>
+          </div>
+        </div>
+      </header>
+    );
+  }
 
   return (
     <header className="sticky top-0 z-50 w-full border-b bg-background/95 backdrop-blur supports-[backdrop-filter]:bg-background/60">
@@ -75,7 +99,7 @@ export function Header() {
                 <DropdownMenuTrigger asChild>
                   <Button variant="ghost" size="sm" className="flex items-center space-x-2">
                     <User className="h-4 w-4" />
-                    <span className="truncate max-w-32">{user?.email}</span>
+                    <span className="truncate max-w-32">{user?.name || user?.email}</span>
                   </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end">
@@ -150,7 +174,7 @@ export function Header() {
                     }}
                   >
                     <LogOut className="h-4 w-4 mr-2" />
-                    Sign Out ({user?.email})
+                    Sign Out ({user?.name || user?.email})
                   </Button>
                 </>
               ) : (
