@@ -104,6 +104,10 @@ const networkingTopics = [
     icon: <Activity className="h-5 w-5" />,
     component: PerformanceMonitor
   },
+
+];
+
+const analyticsTools = [
   {
     id: "learning-analytics",
     title: "Learning Analytics",
@@ -125,7 +129,8 @@ export default function Networking() {
     Advanced: "bg-red-100 text-red-800 border-red-200"
   };
 
-  const selectedComponent = networkingTopics.find(topic => topic.id === selectedTopic)?.component;
+  const selectedComponent = networkingTopics.find(topic => topic.id === selectedTopic)?.component || 
+                           analyticsTools.find(topic => topic.id === selectedTopic)?.component;
 
   if (selectedTopic && selectedComponent) {
     const Component = selectedComponent;
@@ -314,7 +319,7 @@ export default function Networking() {
             
             <TabsContent value="tools" className="mt-8">
               <div className="grid gap-6">
-                {networkingTopics.slice(3).map((topic, index) => (
+                {networkingTopics.slice(3, 5).map((topic, index) => (
                   <Card key={topic.id} className="group hover:shadow-lg transition-all duration-300 hover:-translate-y-1">
                     <CardHeader className="pb-4">
                       <div className="flex items-start justify-between">
@@ -346,7 +351,7 @@ export default function Networking() {
                     <CardContent>
                       <div className="flex items-center justify-between">
                         <div className="text-sm text-muted-foreground">
-                          Tool {index + 1} of {networkingTopics.slice(3).length}
+                          Tool {index + 1} of {networkingTopics.slice(3, 5).length}
                         </div>
                         <Button 
                           className="bg-hero-gradient hover:opacity-90 transition-opacity"
@@ -416,7 +421,7 @@ export default function Networking() {
 
             <TabsContent value="analytics" className="mt-8">
               <div className="grid gap-6">
-                {networkingTopics.slice(8).map((topic, index) => (
+                {analyticsTools.map((topic, index) => (
                   <Card key={topic.id} className="group hover:shadow-lg transition-all duration-300 hover:-translate-y-1">
                     <CardHeader className="pb-4">
                       <div className="flex items-start justify-between">
@@ -448,7 +453,7 @@ export default function Networking() {
                     <CardContent>
                       <div className="flex items-center justify-between">
                         <div className="text-sm text-muted-foreground">
-                          Analytics Tool {index + 1} of {networkingTopics.slice(8).length}
+                          Analytics Tool {index + 1} of {analyticsTools.length}
                         </div>
                         <Button 
                           className="bg-hero-gradient hover:opacity-90 transition-opacity"
