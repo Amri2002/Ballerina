@@ -26,6 +26,10 @@ import DNSResolution from "@/components/networking/DNSResolution";
 import OSIModel from "@/components/networking/OSIModel";
 import SubnetCalculator from "@/components/networking/SubnetCalculator";
 import NetworkTopology from "@/components/networking/NetworkTopology";
+import ProtocolAnalyzer from "@/components/networking/ProtocolAnalyzer";
+import NetworkSecurityScanner from "@/components/networking/NetworkSecurityScanner";
+import PerformanceMonitor from "@/components/networking/PerformanceMonitor";
+import LearningAnalytics from "@/components/networking/LearningAnalytics";
 
 const networkingTopics = [
   {
@@ -72,6 +76,42 @@ const networkingTopics = [
     difficulty: "Advanced",
     icon: <Server className="h-5 w-5" />,
     component: NetworkTopology
+  },
+  {
+    id: "protocol-analyzer",
+    title: "Protocol Analyzer",
+    description: "Analyze network packets and decode protocols",
+    duration: "35 min",
+    difficulty: "Intermediate",
+    icon: <Activity className="h-5 w-5" />,
+    component: ProtocolAnalyzer
+  },
+  {
+    id: "security-scanner",
+    title: "Network Security Scanner",
+    description: "Scan networks for vulnerabilities and security issues",
+    duration: "50 min",
+    difficulty: "Advanced",
+    icon: <Shield className="h-5 w-5" />,
+    component: NetworkSecurityScanner
+  },
+  {
+    id: "performance-monitor",
+    title: "Performance Monitor",
+    description: "Real-time network performance monitoring and metrics",
+    duration: "40 min",
+    difficulty: "Intermediate",
+    icon: <Activity className="h-5 w-5" />,
+    component: PerformanceMonitor
+  },
+  {
+    id: "learning-analytics",
+    title: "Learning Analytics",
+    description: "Track your learning progress and achievements",
+    duration: "25 min",
+    difficulty: "Beginner",
+    icon: <BookOpen className="h-5 w-5" />,
+    component: LearningAnalytics
   }
 ];
 
@@ -160,11 +200,12 @@ export default function Networking() {
       <section className="py-16">
         <div className="container mx-auto px-4">
           <Tabs value={activeTab} onValueChange={setActiveTab} className="max-w-6xl mx-auto">
-            <TabsList className="grid w-full grid-cols-4">
+            <TabsList className="grid w-full grid-cols-5">
               <TabsTrigger value="overview">Overview</TabsTrigger>
               <TabsTrigger value="simulations">Simulations</TabsTrigger>
               <TabsTrigger value="tools">Tools</TabsTrigger>
-              <TabsTrigger value="practice">Practice</TabsTrigger>
+              <TabsTrigger value="advanced">Advanced</TabsTrigger>
+              <TabsTrigger value="analytics">Analytics</TabsTrigger>
             </TabsList>
             
             <TabsContent value="overview" className="mt-8">
@@ -322,26 +363,106 @@ export default function Networking() {
               </div>
             </TabsContent>
             
-            <TabsContent value="practice" className="mt-8">
-              <Card className="h-96 flex items-center justify-center">
-                <div className="text-center space-y-4">
-                  <div className="w-16 h-16 rounded-full bg-accent/10 flex items-center justify-center text-accent mx-auto">
-                    <Award className="h-8 w-8" />
-                  </div>
-                  <h3 className="text-xl font-semibold">Practice Exercises</h3>
-                  <p className="text-muted-foreground max-w-md">
-                    Test your knowledge with interactive quizzes, subnetting challenges, and network troubleshooting scenarios.
-                  </p>
-                  <div className="flex space-x-2">
-                    <Button className="bg-hero-gradient hover:opacity-90 transition-opacity">
-                      Start Quiz
-                    </Button>
-                    <Button variant="outline">
-                      View Challenges
-                    </Button>
-                  </div>
-                </div>
-              </Card>
+            <TabsContent value="advanced" className="mt-8">
+              <div className="grid gap-6">
+                {networkingTopics.slice(5, 8).map((topic, index) => (
+                  <Card key={topic.id} className="group hover:shadow-lg transition-all duration-300 hover:-translate-y-1">
+                    <CardHeader className="pb-4">
+                      <div className="flex items-start justify-between">
+                        <div className="flex items-center space-x-3">
+                          <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center text-primary group-hover:bg-primary group-hover:text-primary-foreground transition-colors">
+                            {topic.icon}
+                          </div>
+                          <div>
+                            <CardTitle className="text-lg font-semibold">
+                              {topic.title}
+                            </CardTitle>
+                            <CardDescription className="text-muted-foreground">
+                              {topic.description}
+                            </CardDescription>
+                          </div>
+                        </div>
+                        <div className="flex items-center space-x-2">
+                          <Badge variant="outline" className={difficultyColors[topic.difficulty as keyof typeof difficultyColors]}>
+                            {topic.difficulty}
+                          </Badge>
+                          <Badge variant="outline" className="text-muted-foreground">
+                            <Clock className="mr-1 h-3 w-3" />
+                            {topic.duration}
+                          </Badge>
+                        </div>
+                      </div>
+                    </CardHeader>
+                    
+                    <CardContent>
+                      <div className="flex items-center justify-between">
+                        <div className="text-sm text-muted-foreground">
+                          Advanced Tool {index + 1} of {networkingTopics.slice(5, 8).length}
+                        </div>
+                        <Button 
+                          className="bg-hero-gradient hover:opacity-90 transition-opacity"
+                          onClick={() => setSelectedTopic(topic.id)}
+                        >
+                          <Play className="mr-2 h-4 w-4" />
+                          Launch Tool
+                          <ArrowRight className="ml-2 h-4 w-4" />
+                        </Button>
+                      </div>
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
+            </TabsContent>
+
+            <TabsContent value="analytics" className="mt-8">
+              <div className="grid gap-6">
+                {networkingTopics.slice(8).map((topic, index) => (
+                  <Card key={topic.id} className="group hover:shadow-lg transition-all duration-300 hover:-translate-y-1">
+                    <CardHeader className="pb-4">
+                      <div className="flex items-start justify-between">
+                        <div className="flex items-center space-x-3">
+                          <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center text-primary group-hover:bg-primary group-hover:text-primary-foreground transition-colors">
+                            {topic.icon}
+                          </div>
+                          <div>
+                            <CardTitle className="text-lg font-semibold">
+                              {topic.title}
+                            </CardTitle>
+                            <CardDescription className="text-muted-foreground">
+                              {topic.description}
+                            </CardDescription>
+                          </div>
+                        </div>
+                        <div className="flex items-center space-x-2">
+                          <Badge variant="outline" className={difficultyColors[topic.difficulty as keyof typeof difficultyColors]}>
+                            {topic.difficulty}
+                          </Badge>
+                          <Badge variant="outline" className="text-muted-foreground">
+                            <Clock className="mr-1 h-3 w-3" />
+                            {topic.duration}
+                          </Badge>
+                        </div>
+                      </div>
+                    </CardHeader>
+                    
+                    <CardContent>
+                      <div className="flex items-center justify-between">
+                        <div className="text-sm text-muted-foreground">
+                          Analytics Tool {index + 1} of {networkingTopics.slice(8).length}
+                        </div>
+                        <Button 
+                          className="bg-hero-gradient hover:opacity-90 transition-opacity"
+                          onClick={() => setSelectedTopic(topic.id)}
+                        >
+                          <Play className="mr-2 h-4 w-4" />
+                          View Analytics
+                          <ArrowRight className="ml-2 h-4 w-4" />
+                        </Button>
+                      </div>
+                    </CardContent>
+                  </Card>
+                ))}
+              </div>
             </TabsContent>
           </Tabs>
         </div>
