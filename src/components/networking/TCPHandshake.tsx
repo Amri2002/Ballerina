@@ -3,7 +3,9 @@ import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
-import { Play, Pause, RotateCcw, ArrowRight, CheckCircle, Clock } from "lucide-react";
+import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
+import { Alert, AlertDescription } from "@/components/ui/alert";
+import { Play, Pause, RotateCcw, ArrowRight, CheckCircle, Clock, Activity, TrendingUp, AlertTriangle } from "lucide-react";
 import { networkingApi } from '@/services/networking-api';
 
 interface Packet {
@@ -24,13 +26,34 @@ interface HandshakeStep {
   status: 'pending' | 'active' | 'completed';
 }
 
+interface StateMachineState {
+  id: string;
+  name: string;
+  description: string;
+  status: 'closed' | 'listen' | 'syn-sent' | 'syn-received' | 'established' | 'fin-wait-1' | 'fin-wait-2' | 'close-wait' | 'closing' | 'last-ack' | 'time-wait';
+  color: string;
+  icon: React.ReactNode;
+}
+
+interface PerformanceMetrics {
+  latency: number;
+  throughput: number;
+  packetLoss: number;
+  retransmissions: number;
+  timestamp: string;
+}
+
 export default function TCPHandshake() {
   const [currentStep, setCurrentStep] = useState(0);
   const [isPlaying, setIsPlaying] = useState(false);
   const [progress, setProgress] = useState(0);
   const [packets, setPackets] = useState<Packet[]>([]);
   const [showDetails, setShowDetails] = useState(false);
-  const [userId, setUserId] = useState("demo-user"); // You can get this from auth context
+  const [userId, setUserId] = useState("demo-user");
+  const [currentState, setCurrentState] = useState<string>('closed');
+  const [performanceMetrics, setPerformanceMetrics] = useState<PerformanceMetrics | null>(null);
+  const [errorScenarios, setErrorScenarios] = useState<string[]>([]);
+  const [showStateMachine, setShowStateMachine] = useState(false);
 
   const handshakeSteps: HandshakeStep[] = [
     {
@@ -137,6 +160,97 @@ export default function TCPHandshake() {
         }
       ],
       status: "pending"
+    }
+  ];
+
+  const stateMachineStates: StateMachineState[] = [
+    {
+      id: 'closed',
+      name: 'CLOSED',
+      description: 'No connection exists',
+      status: 'closed',
+      color: 'bg-gray-100 text-gray-800',
+      icon: <Clock className="h-4 w-4" />
+    },
+    {
+      id: 'listen',
+      name: 'LISTEN',
+      description: 'Server waiting for connection',
+      status: 'listen',
+      color: 'bg-blue-100 text-blue-800',
+      icon: <Activity className="h-4 w-4" />
+    },
+    {
+      id: 'syn-sent',
+      name: 'SYN-SENT',
+      description: 'Client sent SYN, waiting for SYN-ACK',
+      status: 'syn-sent',
+      color: 'bg-yellow-100 text-yellow-800',
+      icon: <TrendingUp className="h-4 w-4" />
+    },
+    {
+      id: 'syn-received',
+      name: 'SYN-RECEIVED',
+      description: 'Server received SYN, sent SYN-ACK',
+      status: 'syn-received',
+      color: 'bg-orange-100 text-orange-800',
+      icon: <Activity className="h-4 w-4" />
+    },
+    {
+      id: 'established',
+      name: 'ESTABLISHED',
+      description: 'Connection established, data transfer ready',
+      status: 'established',
+      color: 'bg-green-100 text-green-800',
+      icon: <CheckCircle className="h-4 w-4" />
+    },
+    {
+      id: 'fin-wait-1',
+      name: 'FIN-WAIT-1',
+      description: 'Client initiated connection close',
+      status: 'fin-wait-1',
+      color: 'bg-red-100 text-red-800',
+      icon: <AlertTriangle className="h-4 w-4" />
+    },
+    {
+      id: 'fin-wait-2',
+      name: 'FIN-WAIT-2',
+      description: 'Client waiting for server FIN',
+      status: 'fin-wait-2',
+      color: 'bg-red-100 text-red-800',
+      icon: <AlertTriangle className="h-4 w-4" />
+    },
+    {
+      id: 'close-wait',
+      name: 'CLOSE-WAIT',
+      description: 'Server received FIN, waiting to close',
+      status: 'close-wait',
+      color: 'bg-purple-100 text-purple-800',
+      icon: <Clock className="h-4 w-4" />
+    },
+    {
+      id: 'closing',
+      name: 'CLOSING',
+      description: 'Both sides closing simultaneously',
+      status: 'closing',
+      color: 'bg-red-100 text-red-800',
+      icon: <AlertTriangle className="h-4 w-4" />
+    },
+    {
+      id: 'last-ack',
+      name: 'LAST-ACK',
+      description: 'Server sent FIN, waiting for ACK',
+      status: 'last-ack',
+      color: 'bg-red-100 text-red-800',
+      icon: <AlertTriangle className="h-4 w-4" />
+    },
+    {
+      id: 'time-wait',
+      name: 'TIME-WAIT',
+      description: 'Connection closing, waiting for timeout',
+      status: 'time-wait',
+      color: 'bg-gray-100 text-gray-800',
+      icon: <Clock className="h-4 w-4" />
     }
   ];
 
@@ -287,15 +401,12 @@ export default function TCPHandshake() {
       <div className="flex justify-between items-center">
         <h1 className="text-3xl font-bold text-gray-900">TCP Three-Way Handshake</h1>
         <div className="flex gap-2">
-          {/* Test API Connection Button */}
           <Button 
             variant="outline" 
-            onClick={() => saveStepProgress("test_connection", "testing")}
-            className="bg-blue-50 text-blue-700 hover:bg-blue-100"
+            onClick={() => setShowStateMachine(!showStateMachine)}
           >
-            Test API Connection
+            {showStateMachine ? 'Hide' : 'Show'} State Machine
           </Button>
-          
           <Button 
             variant="outline" 
             onClick={() => setShowDetails(!showDetails)}
@@ -305,49 +416,58 @@ export default function TCPHandshake() {
         </div>
       </div>
 
-      {/* Controls */}
-      <Card>
-        <CardContent className="pt-6">
-          <div className="flex items-center justify-between mb-4">
-            <div className="flex items-center space-x-2">
-              <Button
-                onClick={isPlaying ? pauseSimulation : startSimulation}
-                disabled={progress === 100}
-              >
-                {isPlaying ? <Pause className="h-4 w-4" /> : <Play className="h-4 w-4" />}
-                {isPlaying ? 'Pause' : 'Start'} Simulation
-              </Button>
-              <Button variant="outline" onClick={resetSimulation}>
-                <RotateCcw className="h-4 w-4" />
-                Reset
-              </Button>
-            </div>
-            <div className="flex items-center space-x-2">
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={prevStep}
-                disabled={currentStep === 0}
-              >
-                Previous
-              </Button>
-              <Button
-                variant="outline"
-                size="sm"
-                onClick={nextStep}
-                disabled={currentStep === steps.length - 1}
-              >
-                Next
-              </Button>
-            </div>
-          </div>
-          
-          <Progress value={progress} className="w-full" />
-          <div className="mt-2 text-sm text-muted-foreground">
-            Progress: {Math.round(progress)}% - Step {currentStep + 1} of {steps.length}
-          </div>
-        </CardContent>
-      </Card>
+      <Tabs defaultValue="simulation" className="w-full">
+        <TabsList className="grid w-full grid-cols-4">
+          <TabsTrigger value="simulation">Simulation</TabsTrigger>
+          <TabsTrigger value="state-machine">State Machine</TabsTrigger>
+          <TabsTrigger value="performance">Performance</TabsTrigger>
+          <TabsTrigger value="troubleshooting">Troubleshooting</TabsTrigger>
+        </TabsList>
+
+        <TabsContent value="simulation" className="space-y-6">
+          {/* Controls */}
+          <Card>
+            <CardContent className="pt-6">
+              <div className="flex items-center justify-between mb-4">
+                <div className="flex items-center space-x-2">
+                  <Button
+                    onClick={isPlaying ? pauseSimulation : startSimulation}
+                    disabled={progress === 100}
+                  >
+                    {isPlaying ? <Pause className="h-4 w-4" /> : <Play className="h-4 w-4" />}
+                    {isPlaying ? 'Pause' : 'Start'} Simulation
+                  </Button>
+                  <Button variant="outline" onClick={resetSimulation}>
+                    <RotateCcw className="h-4 w-4" />
+                    Reset
+                  </Button>
+                </div>
+                <div className="flex items-center space-x-2">
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={prevStep}
+                    disabled={currentStep === 0}
+                  >
+                    Previous
+                  </Button>
+                  <Button
+                    variant="outline"
+                    size="sm"
+                    onClick={nextStep}
+                    disabled={currentStep === steps.length - 1}
+                  >
+                    Next
+                  </Button>
+                </div>
+              </div>
+              
+              <Progress value={progress} className="w-full" />
+              <div className="mt-2 text-sm text-muted-foreground">
+                Progress: {Math.round(progress)}% - Step {currentStep + 1} of {steps.length}
+              </div>
+            </CardContent>
+          </Card>
 
       {/* Network Visualization */}
       <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
@@ -462,6 +582,111 @@ export default function TCPHandshake() {
           </div>
         </CardContent>
       </Card>
+        </TabsContent>
+
+        <TabsContent value="state-machine" className="space-y-6">
+          <Card>
+            <CardHeader>
+              <CardTitle>TCP State Machine</CardTitle>
+              <CardDescription>Visualize the TCP connection states and transitions</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+                {stateMachineStates.map((state) => (
+                  <div
+                    key={state.id}
+                    className={`p-4 rounded-lg border-2 transition-all ${
+                      currentState === state.id 
+                        ? 'border-blue-500 bg-blue-50' 
+                        : 'border-gray-200 bg-white'
+                    }`}
+                  >
+                    <div className="flex items-center space-x-2 mb-2">
+                      {state.icon}
+                      <span className="font-medium">{state.name}</span>
+                    </div>
+                    <p className="text-sm text-gray-600">{state.description}</p>
+                    {currentState === state.id && (
+                      <Badge className="mt-2 bg-blue-100 text-blue-800">
+                        Current State
+                      </Badge>
+                    )}
+                  </div>
+                ))}
+              </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="performance" className="space-y-6">
+          <Card>
+            <CardHeader>
+              <CardTitle>Performance Metrics</CardTitle>
+              <CardDescription>Monitor connection performance and timing</CardDescription>
+            </CardHeader>
+            <CardContent>
+              {performanceMetrics ? (
+                <div className="grid grid-cols-2 md:grid-cols-4 gap-4">
+                  <div className="text-center p-4 border rounded-lg">
+                    <div className="text-2xl font-bold text-blue-600">{performanceMetrics.latency}ms</div>
+                    <div className="text-sm text-gray-600">Latency</div>
+                  </div>
+                  <div className="text-center p-4 border rounded-lg">
+                    <div className="text-2xl font-bold text-green-600">{performanceMetrics.throughput} Mbps</div>
+                    <div className="text-sm text-gray-600">Throughput</div>
+                  </div>
+                  <div className="text-center p-4 border rounded-lg">
+                    <div className="text-2xl font-bold text-red-600">{performanceMetrics.packetLoss}%</div>
+                    <div className="text-sm text-gray-600">Packet Loss</div>
+                  </div>
+                  <div className="text-center p-4 border rounded-lg">
+                    <div className="text-2xl font-bold text-orange-600">{performanceMetrics.retransmissions}</div>
+                    <div className="text-sm text-gray-600">Retransmissions</div>
+                  </div>
+                </div>
+              ) : (
+                <div className="text-center py-8 text-gray-500">
+                  Start the simulation to see performance metrics
+                </div>
+              )}
+            </CardContent>
+          </Card>
+        </TabsContent>
+
+        <TabsContent value="troubleshooting" className="space-y-6">
+          <Card>
+            <CardHeader>
+              <CardTitle>Common Issues & Solutions</CardTitle>
+              <CardDescription>Learn about TCP handshake problems and how to resolve them</CardDescription>
+            </CardHeader>
+            <CardContent>
+              <div className="space-y-4">
+                <Alert>
+                  <AlertTriangle className="h-4 w-4" />
+                  <AlertDescription>
+                    <strong>SYN Flood Attack:</strong> Server receives many SYN packets but no ACK responses.
+                    Solution: Implement SYN cookies or rate limiting.
+                  </AlertDescription>
+                </Alert>
+                <Alert>
+                  <AlertTriangle className="h-4 w-4" />
+                  <AlertDescription>
+                    <strong>Connection Timeout:</strong> Client doesn't receive SYN-ACK within timeout period.
+                    Solution: Check network connectivity and firewall settings.
+                  </AlertDescription>
+                </Alert>
+                <Alert>
+                  <AlertTriangle className="h-4 w-4" />
+                  <AlertDescription>
+                    <strong>Port Unreachable:</strong> Server port is closed or blocked.
+                    Solution: Verify server is running and port is open.
+                  </AlertDescription>
+                </Alert>
+              </div>
+            </CardContent>
+          </Card>
+        </TabsContent>
+      </Tabs>
     </div>
   );
 }
