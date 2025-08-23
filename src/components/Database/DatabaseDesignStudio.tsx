@@ -96,7 +96,12 @@ export function DatabaseDesignStudio() {
     ));
   };
 
-  const updateColumn = (tableId: string, columnIndex: number, field: keyof TableColumn, value: any) => {
+  const updateColumn = (
+    tableId: string,
+    columnIndex: number,
+    field: keyof TableColumn,
+    value: string | boolean | undefined
+  ) => {
     setTables(prev => prev.map(table => 
       table.id === tableId 
         ? {

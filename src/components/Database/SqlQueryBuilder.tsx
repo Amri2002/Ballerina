@@ -11,7 +11,7 @@ import { toast } from "sonner";
 
 interface QueryResult {
   columns: string[];
-  rows: any[][];
+  rows: unknown[][];
   executionTime: number;
   error?: string;
 }
@@ -238,7 +238,7 @@ export function SqlQueryBuilder() {
                             {result.rows.map((row, i) => (
                               <TableRow key={i}>
                                 {row.map((cell, j) => (
-                                  <TableCell key={j}>{cell}</TableCell>
+                                  <TableCell key={j}>{String(cell)}</TableCell>
                                 ))}
                               </TableRow>
                             ))}

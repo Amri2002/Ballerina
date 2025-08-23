@@ -26,14 +26,26 @@ import { Plus, Trash2, Save, Download, Database, GitMerge, Key, Link2 } from "lu
 import { toast } from "sonner";
 
 // Custom Entity Node Component
-const EntityNode = ({ data }: { data: any }) => {
+interface EntityAttribute {
+  name: string;
+  type: string;
+  isPrimary?: boolean;
+  isForeign?: boolean;
+}
+
+interface EntityNodeData {
+  name: string;
+  attributes?: EntityAttribute[];
+}
+
+const EntityNode = ({ data }: { data: EntityNodeData }) => {
   return (
     <div className="er-entity min-w-48 p-0 rounded-lg shadow-lg bg-white">
       <div className="bg-database text-white px-3 py-2 rounded-t-lg">
         <div className="font-bold text-sm">{data.name}</div>
       </div>
       <div className="p-3">
-        {data.attributes?.map((attr: any, index: number) => (
+        {data.attributes?.map((attr, index) => (
           <div key={index} className="flex items-center gap-2 py-1 text-xs">
             {attr.isPrimary && <Key className="h-3 w-3 text-yellow-600" />}
             {attr.isForeign && <Link2 className="h-3 w-3 text-blue-600" />}
@@ -47,7 +59,11 @@ const EntityNode = ({ data }: { data: any }) => {
 };
 
 // Custom Relationship Node Component  
-const RelationshipNode = ({ data }: { data: any }) => {
+interface RelationshipNodeData {
+  name: string;
+}
+
+const RelationshipNode = ({ data }: { data: RelationshipNodeData }) => {
   return (
     <div className="er-relationship px-4 py-2 rounded bg-primary text-primary-foreground text-sm font-medium shadow-lg">
       {data.name}
@@ -226,7 +242,7 @@ export function ErDiagramDesigner() {
         sql += `CREATE TABLE ${node.data.name.toLowerCase()} (\n`;
         
         const attributes = Array.isArray(node.data.attributes) ? node.data.attributes : [];
-        const attributeSQL = attributes.map((attr: any) => {
+        const attributeSQL = attributes.map((attr: EntityAttribute) => {
           let line = `  ${attr.name} ${attr.type}`;
           if (attr.isPrimary) line += " PRIMARY KEY";
           if (attr.name.includes('_id') && !attr.isPrimary) line += " NOT NULL";
@@ -242,7 +258,7 @@ export function ErDiagramDesigner() {
     nodes.filter(node => node.type === 'entity').forEach((node) => {
       if (node.data && typeof node.data.name === 'string') {
         const attributes = Array.isArray(node.data.attributes) ? node.data.attributes : [];
-        attributes.forEach((attr: any) => {
+        attributes.forEach((attr: EntityAttribute) => {
           if (attr.isForeign) {
             const referencedTable = attr.name.replace('_id', '');
             sql += `ALTER TABLE ${String(node.data.name).toLowerCase()} \nADD FOREIGN KEY (${attr.name}) REFERENCES ${referencedTable}(${attr.name});\n\n`;

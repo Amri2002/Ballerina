@@ -165,6 +165,160 @@ The Order-Product relationship requires a junction table (OrderItem) because it'
         explanation: 'Many-to-many relationships require a junction (or bridge) table that contains foreign keys referencing the primary keys of both related entities.'
       }
     ]
+  },
+  {
+    id: 'acid-properties',
+    title: 'ACID Transactions',
+    description: 'Understand transaction properties and database consistency',
+    duration: 50,
+    difficulty: 'Advanced',
+    content: {
+      theory: `ACID is an acronym for the four key properties that guarantee reliable database transactions:
+
+**Atomicity:**
+A transaction either completes fully or not at all. If any part of the transaction fails, the entire transaction is rolled back to maintain data consistency.
+
+**Consistency:**
+The database remains in a valid state before and after each transaction. All constraints, triggers, and rules are maintained throughout the transaction.
+
+**Isolation:**
+Multiple transactions can execute concurrently without interfering with each other. Each transaction appears to execute in isolation from others.
+
+**Durability:**
+Once a transaction is committed, the changes are permanently stored and will survive system failures, power outages, or crashes.
+
+**Transaction Isolation Levels:**
+1. READ UNCOMMITTED: Lowest isolation, allows dirty reads
+2. READ COMMITTED: Prevents dirty reads, default in many systems  
+3. REPEATABLE READ: Prevents dirty and non-repeatable reads
+4. SERIALIZABLE: Highest isolation, prevents all anomalies`,
+      example: `-- Example: Banking Transaction with ACID properties
+
+BEGIN TRANSACTION;
+
+-- Atomicity: Both operations must succeed
+UPDATE accounts SET balance = balance - 100 WHERE account_id = 1;
+UPDATE accounts SET balance = balance + 100 WHERE account_id = 2;
+
+-- Consistency: Check constraints
+IF @@ERROR <> 0 OR (SELECT balance FROM accounts WHERE account_id = 1) < 0
+BEGIN
+    ROLLBACK TRANSACTION; -- Atomicity in action
+END
+ELSE
+BEGIN
+    COMMIT TRANSACTION; -- Durability ensures permanent storage
+END
+
+-- Isolation: Concurrent transactions don't interfere
+SET TRANSACTION ISOLATION LEVEL READ COMMITTED;`
+    },
+    questions: [
+      {
+        id: 'q1',
+        type: 'multiple-choice',
+        question: 'Which ACID property ensures that a transaction either completely succeeds or completely fails?',
+        options: ['Atomicity', 'Consistency', 'Isolation', 'Durability'],
+        correctAnswer: 0,
+        explanation: 'Atomicity ensures that transactions are "all or nothing" - they either complete fully or are rolled back entirely.'
+      },
+      {
+        id: 'q2',
+        type: 'multiple-choice',
+        question: 'What isolation level prevents dirty reads but allows non-repeatable reads?',
+        options: ['READ UNCOMMITTED', 'READ COMMITTED', 'REPEATABLE READ', 'SERIALIZABLE'],
+        correctAnswer: 1,
+        explanation: 'READ COMMITTED prevents dirty reads but still allows non-repeatable reads and phantom reads.'
+      },
+      {
+        id: 'q3',
+        type: 'code',
+        question: 'Complete this transaction pattern: BEGIN TRANSACTION; UPDATE users SET status="active"; _____ TRANSACTION;',
+        correctAnswer: 'COMMIT',
+        explanation: 'COMMIT TRANSACTION makes the changes permanent and satisfies the Durability property.'
+      }
+    ]
+  },
+  {
+    id: 'indexing',
+    title: 'Database Indexing',
+    description: 'Learn how indexes improve query performance and B-tree structures',
+    duration: 40,
+    difficulty: 'Intermediate',
+    content: {
+      theory: `Database indexes are data structures that improve query performance by creating shortcuts to data:
+
+**What is an Index?**
+An index is like a book's index - it points to where data is stored without having to scan every page. Indexes are maintained separately from the main table data.
+
+**Types of Indexes:**
+
+**Primary Index:** Built automatically on the primary key, determines physical storage order
+
+**Secondary Index:** Created on non-primary key columns, can be unique or non-unique
+
+**Composite Index:** Covers multiple columns, order matters for optimization
+
+**B-Tree Structure:**
+Most databases use B-trees for indexing because they provide:
+1. Balanced tree structure (all leaf nodes at same level)
+2. Sorted data for efficient range queries
+3. Logarithmic search time O(log n)
+4. Efficient for both point lookups and range scans
+
+**Performance Trade-offs:**
+- Faster SELECT queries
+- Slower INSERT/UPDATE/DELETE operations
+- Additional storage space required`,
+      example: `-- Creating indexes for performance
+
+-- Primary index (automatic)
+CREATE TABLE users (
+    id INT PRIMARY KEY,
+    email VARCHAR(100),
+    name VARCHAR(50),
+    created_at DATETIME
+);
+
+-- Secondary index for frequent lookups
+CREATE INDEX idx_users_email ON users(email);
+
+-- Composite index for multi-column queries
+CREATE INDEX idx_users_name_created ON users(name, created_at);
+
+-- Query that benefits from indexing
+SELECT * FROM users 
+WHERE email = 'john@example.com'  -- Uses idx_users_email
+AND created_at > '2023-01-01';
+
+-- Check query execution plan
+EXPLAIN SELECT * FROM users WHERE email = 'john@example.com';`
+    },
+    questions: [
+      {
+        id: 'q1',
+        type: 'multiple-choice',
+        question: 'What is the primary advantage of using database indexes?',
+        options: ['Reduced storage space', 'Faster query execution', 'Improved data integrity', 'Simplified table structure'],
+        correctAnswer: 1,
+        explanation: 'Indexes primarily improve query performance by providing fast access paths to data.'
+      },
+      {
+        id: 'q2',
+        type: 'multiple-choice',
+        question: 'In a B-tree index, what is the time complexity for finding a record?',
+        options: ['O(1)', 'O(log n)', 'O(n)', 'O(n log n)'],
+        correctAnswer: 1,
+        explanation: 'B-tree indexes provide logarithmic search time due to their balanced tree structure.'
+      },
+      {
+        id: 'q3',
+        type: 'code',
+        question: 'Write a SQL statement to create an index on the "last_name" column of a "customers" table.',
+        correctAnswer: 'CREATE INDEX idx_customers_last_name ON customers(last_name);',
+        explanation: 'This creates a secondary index on the last_name column to speed up queries filtering by last name.'
+      }
+    ]
   }
 ];
 
@@ -177,7 +331,7 @@ export function LearningModule({ moduleId, onComplete }: Props) {
   const module = modules.find(m => m.id === moduleId);
   const [currentStep, setCurrentStep] = useState<'theory' | 'practice' | 'quiz'>('theory');
   const [currentQuestion, setCurrentQuestion] = useState(0);
-  const [answers, setAnswers] = useState<Record<string, any>>({});
+  const [answers, setAnswers] = useState<Record<string, string | number>>({});
   const [showResults, setShowResults] = useState(false);
   const [userAnswer, setUserAnswer] = useState('');
 
@@ -191,7 +345,7 @@ export function LearningModule({ moduleId, onComplete }: Props) {
     return question && answer === question.correctAnswer;
   }).length;
 
-  const handleAnswer = (questionId: string, answer: any) => {
+  const handleAnswer = (questionId: string, answer: string | number) => {
     setAnswers(prev => ({ ...prev, [questionId]: answer }));
   };
 
@@ -260,7 +414,7 @@ export function LearningModule({ moduleId, onComplete }: Props) {
       </Card>
 
       {/* Content */}
-      <Tabs value={currentStep} onValueChange={(value) => setCurrentStep(value as any)}>
+      <Tabs value={currentStep} onValueChange={(value) => setCurrentStep(value as 'theory' | 'practice' | 'quiz')}>
         <TabsList className="grid w-full grid-cols-3">
           <TabsTrigger value="theory">Theory</TabsTrigger>
           <TabsTrigger value="practice">Practice</TabsTrigger>

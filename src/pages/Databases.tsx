@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -30,7 +31,7 @@ const databaseTopics = [
     icon: <FileText className="h-5 w-5" />
   },
   {
-    id: "er-diagrams",
+    id: "er-diagrams", 
     title: "ER Diagram Design",
     description: "Build entity-relationship diagrams with validation",
     duration: "45 min",
@@ -50,17 +51,98 @@ const databaseTopics = [
     title: "Database Indexing",
     description: "B-Tree navigation and performance optimization",
     duration: "40 min",
-    difficulty: "Intermediate",
+    difficulty: "Intermediate", 
     icon: <BarChart3 className="h-5 w-5" />
   }
 ];
 
 export default function Databases() {
+  const [activeView, setActiveView] = useState<'overview' | 'query-builder' | 'er-designer' | 'design-studio' | 'learning'>('overview');
+  const [selectedModule, setSelectedModule] = useState<string | null>(null);
+
   const difficultyColors = {
     Beginner: "bg-green-100 text-green-800 border-green-200",
     Intermediate: "bg-yellow-100 text-yellow-800 border-yellow-200",
     Advanced: "bg-red-100 text-red-800 border-red-200"
   };
+
+  if (activeView === 'learning' && selectedModule) {
+    return (
+      <div className="min-h-screen bg-background">
+        <Header />
+        <div className="container mx-auto px-4 py-8">
+          <Button 
+            variant="outline" 
+            onClick={() => {
+              setActiveView('overview');
+              setSelectedModule(null);
+            }}
+            className="mb-4"
+          >
+            ← Back to Database Overview
+          </Button>
+          <LearningModule 
+            moduleId={selectedModule} 
+            onComplete={() => {
+              setActiveView('overview');
+              setSelectedModule(null);
+            }}
+          />
+        </div>
+      </div>
+    );
+  }
+
+  if (activeView === 'query-builder') {
+    return (
+      <div className="min-h-screen bg-background">
+        <Header />
+        <div className="container mx-auto px-4 py-8">
+          <div className="flex items-center justify-between mb-6">
+            <h1 className="text-3xl font-bold">SQL Query Builder</h1>
+            <Button variant="outline" onClick={() => setActiveView('overview')}>
+              ← Back to Overview
+            </Button>
+          </div>
+          <SqlQueryBuilder />
+        </div>
+      </div>
+    );
+  }
+
+  if (activeView === 'er-designer') {
+    return (
+      <div className="min-h-screen bg-background">
+        <Header />
+        <div className="container mx-auto px-4 py-8">
+          <div className="flex items-center justify-between mb-6">
+            <h1 className="text-3xl font-bold">ER Diagram Designer</h1>
+            <Button variant="outline" onClick={() => setActiveView('overview')}>
+              ← Back to Overview
+            </Button>
+          </div>
+          <ErDiagramDesigner />
+        </div>
+      </div>
+    );
+  }
+
+  if (activeView === 'design-studio') {
+    return (
+      <div className="min-h-screen bg-background">
+        <Header />
+        <div className="container mx-auto px-4 py-8">
+          <div className="flex items-center justify-between mb-6">
+            <h1 className="text-3xl font-bold">Database Design Studio</h1>
+            <Button variant="outline" onClick={() => setActiveView('overview')}>
+              ← Back to Overview
+            </Button>
+          </div>
+          <DatabaseDesignStudio />
+        </div>
+      </div>
+    );
+  }
 
   return (
     <div className="min-h-screen bg-background">
@@ -148,7 +230,13 @@ export default function Databases() {
                         <div className="text-sm text-muted-foreground">
                           Lesson {index + 1} of {databaseTopics.length}
                         </div>
-                        <Button className="bg-hero-gradient hover:opacity-90 transition-opacity">
+                        <Button 
+                          className="bg-hero-gradient hover:opacity-90 transition-opacity"
+                          onClick={() => {
+                            setSelectedModule(topic.id);
+                            setActiveView('learning');
+                          }}
+                        >
                           <Play className="mr-2 h-4 w-4" />
                           Start Learning
                           <ArrowRight className="ml-2 h-4 w-4" />
@@ -170,7 +258,10 @@ export default function Databases() {
                   <p className="text-muted-foreground max-w-md">
                     Write and execute SQL queries against real databases. See execution plans, performance metrics, and get instant feedback on your queries.
                   </p>
-                  <Button className="bg-hero-gradient hover:opacity-90 transition-opacity">
+                  <Button 
+                    className="bg-hero-gradient hover:opacity-90 transition-opacity"
+                    onClick={() => setActiveView('query-builder')}
+                  >
                     Launch Query Builder
                   </Button>
                 </div>
@@ -178,20 +269,43 @@ export default function Databases() {
             </TabsContent>
             
             <TabsContent value="design-tools" className="mt-8">
-              <Card className="h-96 flex items-center justify-center">
-                <div className="text-center space-y-4">
-                  <div className="w-16 h-16 rounded-full bg-accent/10 flex items-center justify-center text-accent mx-auto">
-                    <GitMerge className="h-8 w-8" />
+              <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                <Card className="h-64 flex items-center justify-center">
+                  <div className="text-center space-y-4">
+                    <div className="w-12 h-12 rounded-full bg-database/10 flex items-center justify-center text-database mx-auto">
+                      <GitMerge className="h-6 w-6" />
+                    </div>
+                    <h3 className="text-lg font-semibold">ER Diagram Designer</h3>
+                    <p className="text-muted-foreground text-sm max-w-sm">
+                      Create entity-relationship diagrams with drag-and-drop interface and automatic SQL generation.
+                    </p>
+                    <Button 
+                      className="bg-hero-gradient hover:opacity-90 transition-opacity"
+                      onClick={() => setActiveView('er-designer')}
+                    >
+                      Open ER Designer
+                    </Button>
                   </div>
-                  <h3 className="text-xl font-semibold">Database Design Studio</h3>
-                  <p className="text-muted-foreground max-w-md">
-                    Create ER diagrams, normalize databases, and validate your schema designs with our interactive database design tools.
-                  </p>
-                  <Button className="bg-hero-gradient hover:opacity-90 transition-opacity">
-                    Open Design Studio
-                  </Button>
-                </div>
-              </Card>
+                </Card>
+                
+                <Card className="h-64 flex items-center justify-center">
+                  <div className="text-center space-y-4">
+                    <div className="w-12 h-12 rounded-full bg-accent/10 flex items-center justify-center text-accent mx-auto">
+                      <Database className="h-6 w-6" />
+                    </div>
+                    <h3 className="text-lg font-semibold">Schema Design Studio</h3>
+                    <p className="text-muted-foreground text-sm max-w-sm">
+                      Design normalized database schemas with validation and optimization suggestions.
+                    </p>
+                    <Button 
+                      className="bg-hero-gradient hover:opacity-90 transition-opacity"
+                      onClick={() => setActiveView('design-studio')}
+                    >
+                      Open Design Studio
+                    </Button>
+                  </div>
+                </Card>
+              </div>
             </TabsContent>
           </Tabs>
         </div>
