@@ -3,6 +3,10 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Badge } from "@/components/ui/badge";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Header } from "@/components/Navigation/Header";
+import { SqlQueryBuilder } from "@/components/Database/SqlQueryBuilder";
+import { ErDiagramDesigner } from "@/components/Database/ERDiagramDesigner";
+import { DatabaseDesignStudio } from "@/components/Database/DatabaseDesignStudio";
+import { LearningModule } from "@/components/Database/LearningModule";
 import { 
   Database, 
   Play, 
