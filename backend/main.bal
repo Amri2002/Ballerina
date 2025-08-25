@@ -4,8 +4,9 @@ import ballerinax/mongodb;
 import ballerina/log;
 // import ballerina/io;
 
-// JWT configuration
-const string JWT_SECRET = "your-super-secret-jwt-key-change-in-production";
+const string JWT_ISSUER = "ballerina-backend";
+const string JWT_AUDIENCE = "ballerina-frontend";
+const string JWT_SECRET = "supersecretkey";
 
 listener http:Listener httpListener = new (3001);
 
@@ -39,6 +40,9 @@ function createResponse(int statusCode, string payload, string? errorMessage) re
     res.setHeader("Content-Type", "application/json");
     return res;
 }
+
+// In-memory session store
+map<map<anydata>> sessionStore = {};
 
 service /api on httpListener {
 
@@ -181,13 +185,9 @@ service /api on httpListener {
         if (payloadOrError is error) {
             return createResponse(400, "Invalid JSON", "Invalid JSON payload");
         }
-
         json payload = payloadOrError;
-
-        // Extract fields safely
         string email = "";
         string password = "";
-
         json|error emailField = payload.email;
         if (emailField is string) {
             email = emailField;
@@ -196,61 +196,59 @@ service /api on httpListener {
         if (passwordField is string) {
             password = passwordField;
         }
-
         if (email == "" || password == "") {
             return createResponse(400, "Missing email or password", "Required fields missing");
         }
-
-        // Connect to MongoDB
         mongodb:Database|error dbResult = mongoClient->getDatabase("learning_platform");
         if (dbResult is error) {
             return createResponse(500, "Database connection failed", dbResult.message());
         }
-        
         mongodb:Database db = dbResult;
         mongodb:Collection|error collectionResult = db->getCollection("users");
         if (collectionResult is error) {
             return createResponse(500, "Collection access failed", collectionResult.message());
         }
-        
         mongodb:Collection usersCollection = collectionResult;
-        
-        // Find user by email
-        map<json> filter = {
-            email: email
-        };
-        
+        map<json> filter = { email: email };
         stream<record {}, error?>|error findResult = usersCollection->find(filter);
         if (findResult is error) {
             return createResponse(500, "Database query failed", findResult.message());
         }
-        
         stream<record {}, error?> resultStream = findResult;
         record {}[] data = [];
         error? forEachResult = resultStream.forEach(function(record {} value) {
             data.push(value);
         });
-        
         if (forEachResult is error) {
             return createResponse(500, "Data processing failed", forEachResult.message());
         }
-        
         if (data.length() == 0) {
             return createResponse(401, "Invalid credentials", "User not found");
         }
-        
-        // In production, verify password hash here
-        // For now, we'll just check if the user exists
-        
-        return createResponse(200, "{\"token\": \"dummy-token-123\", \"user\": {\"id\": \"user_123\", \"email\": \"" + email + "\", \"name\": \"Demo User\", \"createdAt\": \"" + time:utcNow().toString() + "\", \"updatedAt\": \"" + time:utcNow().toString() + "\"}}", ());
+        map<anydata> userMap = <map<anydata>>data[0];
+        string dbPassword = <string>userMap["password"];
+        if (password != dbPassword) {
+            return createResponse(401, "Invalid credentials", "Incorrect password");
+        }
+        // Generate a session token using email and timestamp
+        string token = email + "_" + time:utcNow().toString();
+        userMap["password"] = ();
+        sessionStore[token] = userMap;
+        string userJson = userMap.toString();
+        return createResponse(200, "{\"token\": \"" + token + "\", \"user\": " + userJson + "}", ());
     }
 
     // Add missing auth/me endpoint
     resource function get auth/me(http:Request req) returns http:Response|error {
         string|http:HeaderNotFoundError authHeader = req.getHeader("Authorization");
         if (authHeader is string && authHeader.startsWith("Bearer ")) {
-            // In production, verify JWT token here
-            return createResponse(200, "{\"id\": \"user_123\", \"email\": \"demo@example.com\", \"name\": \"Demo User\"}", ());
+            string token = authHeader.substring(7, authHeader.length());
+            map<anydata>? userMapOpt = sessionStore[token];
+            if userMapOpt is map<anydata> {
+                return createResponse(200, userMapOpt.toString(), ());
+            } else {
+                return createResponse(401, "Invalid token", "Session not found");
+            }
         } else {
             return createResponse(401, "Unauthorized", "Missing or invalid authorization header");
         }
@@ -273,7 +271,6 @@ service /api on httpListener {
         string userId = "";
         string packetData = "";
         string protocolType = "";
-
         json|error userIdField = payload.userId;
         if (userIdField is string) {
             userId = userIdField;
