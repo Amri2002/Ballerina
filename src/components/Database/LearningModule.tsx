@@ -5,6 +5,9 @@ import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { ScrollArea } from "@/components/ui/scroll-area";
+import { Input } from "@/components/ui/input";
+import { Textarea } from "@/components/ui/textarea";
+import { Label } from "@/components/ui/label";
 import { 
   Play, 
   CheckCircle, 
@@ -14,7 +17,11 @@ import {
   BookOpen,
   ArrowRight,
   ArrowLeft,
-  RotateCcw
+  RotateCcw,
+  Database,
+  Code,
+  Target,
+  Lightbulb
 } from "lucide-react";
 import { toast } from "sonner";
 
@@ -331,7 +338,7 @@ export function LearningModule({ moduleId, onComplete }: Props) {
   const module = modules.find(m => m.id === moduleId);
   const [currentStep, setCurrentStep] = useState<'theory' | 'practice' | 'quiz'>('theory');
   const [currentQuestion, setCurrentQuestion] = useState(0);
-  const [answers, setAnswers] = useState<Record<string, string | number>>({});
+  const [answers, setAnswers] = useState<Record<string, any>>({});
   const [showResults, setShowResults] = useState(false);
   const [userAnswer, setUserAnswer] = useState('');
 
@@ -345,7 +352,7 @@ export function LearningModule({ moduleId, onComplete }: Props) {
     return question && answer === question.correctAnswer;
   }).length;
 
-  const handleAnswer = (questionId: string, answer: string | number) => {
+  const handleAnswer = (questionId: string, answer: any) => {
     setAnswers(prev => ({ ...prev, [questionId]: answer }));
   };
 
@@ -414,7 +421,7 @@ export function LearningModule({ moduleId, onComplete }: Props) {
       </Card>
 
       {/* Content */}
-      <Tabs value={currentStep} onValueChange={(value) => setCurrentStep(value as 'theory' | 'practice' | 'quiz')}>
+      <Tabs value={currentStep} onValueChange={(value) => setCurrentStep(value as any)}>
         <TabsList className="grid w-full grid-cols-3">
           <TabsTrigger value="theory">Theory</TabsTrigger>
           <TabsTrigger value="practice">Practice</TabsTrigger>
@@ -452,37 +459,17 @@ export function LearningModule({ moduleId, onComplete }: Props) {
         </TabsContent>
         
         <TabsContent value="practice" className="space-y-4">
-          <Card>
-            <CardHeader>
-              <CardTitle className="text-lg">Interactive Practice</CardTitle>
-            </CardHeader>
-            <CardContent>
-              <div className="h-96 flex items-center justify-center border-2 border-dashed border-muted rounded-lg">
-                <div className="text-center space-y-4">
-                  <div className="w-16 h-16 rounded-full bg-database/10 flex items-center justify-center text-database mx-auto">
-                    <Play className="h-8 w-8" />
-                  </div>
-                  <h3 className="text-xl font-semibold">Interactive Practice Session</h3>
-                  <p className="text-muted-foreground max-w-md">
-                    Practice what you've learned with hands-on exercises and real-time feedback.
-                  </p>
-                  <Button className="database-gradient">
-                    Start Practice
-                  </Button>
-                </div>
-              </div>
-              <div className="mt-4 flex justify-between">
-                <Button variant="outline" onClick={() => setCurrentStep('theory')}>
-                  <ArrowLeft className="mr-2 h-4 w-4" />
-                  Back to Theory
-                </Button>
-                <Button onClick={() => setCurrentStep('quiz')}>
-                  Next: Quiz
-                  <ArrowRight className="ml-2 h-4 w-4" />
-                </Button>
-              </div>
-            </CardContent>
-          </Card>
+          <PracticeExercises moduleId={moduleId} />
+          <div className="flex justify-between">
+            <Button variant="outline" onClick={() => setCurrentStep('theory')}>
+              <ArrowLeft className="mr-2 h-4 w-4" />
+              Back: Theory
+            </Button>
+            <Button onClick={() => setCurrentStep('quiz')}>
+              Next: Quiz
+              <ArrowRight className="ml-2 h-4 w-4" />
+            </Button>
+          </div>
         </TabsContent>
         
         <TabsContent value="quiz" className="space-y-4">
@@ -633,5 +620,371 @@ export function LearningModule({ moduleId, onComplete }: Props) {
         </TabsContent>
       </Tabs>
     </div>
+  );
+}
+
+// Practice Exercises Component
+function PracticeExercises({ moduleId }: { moduleId: string }) {
+  const [currentExercise, setCurrentExercise] = useState(0);
+  const [userInput, setUserInput] = useState('');
+  const [feedback, setFeedback] = useState<{ type: 'success' | 'error' | 'info'; message: string } | null>(null);
+  const [isCompleted, setIsCompleted] = useState(false);
+
+  const exercisesByModule: Record<string, any[]> = {
+    'sql-basics': [
+      {
+        id: 1,
+        title: "Basic SELECT Query",
+        description: "Write a query to retrieve all customers from the database",
+        type: "query",
+        scenario: "You have a table called 'customers' with columns: id, name, email, city",
+        question: "Write a SQL query to select all customers:",
+        solution: "SELECT * FROM customers"
+      },
+      {
+        id: 2,
+        title: "WHERE Clause Filtering",
+        description: "Filter customers based on their city",
+        type: "query",
+        scenario: "Find all customers who live in 'New York'",
+        question: "Write a SQL query to find customers in New York:",
+        solution: "SELECT * FROM customers WHERE city = 'New York'"
+      },
+      {
+        id: 3,
+        title: "JOIN Operations",
+        description: "Combine data from customers and orders tables",
+        type: "query",
+        scenario: "Show customer names with their order totals",
+        question: "Write a JOIN query to show customer names and order amounts:",
+        solution: "SELECT c.name, o.amount FROM customers c JOIN orders o ON c.id = o.customer_id"
+      }
+    ],
+    'er-diagrams': [
+      {
+        id: 1,
+        title: "Entity Identification",
+        description: "Identify the main entities in a library system",
+        type: "entity",
+        scenario: "A library system manages books, authors, members, and loans",
+        question: "List the main entities (separated by commas):",
+        solution: "Book, Author, Member, Loan"
+      },
+      {
+        id: 2,
+        title: "Primary Key Design",
+        description: "Define appropriate primary keys for entities",
+        type: "primary-key",
+        scenario: "For a Student entity with attributes: student_id, name, email, phone",
+        question: "Which attribute should be the primary key?",
+        solution: "student_id"
+      },
+      {
+        id: 3,
+        title: "Relationship Types",
+        description: "Identify the relationship between Customer and Order entities",
+        type: "relationship",
+        scenario: "One customer can place multiple orders, but each order belongs to one customer",
+        question: "What type of relationship is this? (One-to-One, One-to-Many, Many-to-Many)",
+        solution: "One-to-Many"
+      }
+    ],
+    'acid-properties': [
+      {
+        id: 1,
+        title: "Banking Transfer Simulation",
+        description: "Simulate a money transfer between two accounts and observe ACID properties",
+        type: "transaction",
+        scenario: "Transfer $500 from Account A (balance: $1000) to Account B (balance: $200)",
+        steps: [
+          "BEGIN TRANSACTION",
+          "Deduct $500 from Account A",
+          "Add $500 to Account B", 
+          "Check constraints",
+          "COMMIT or ROLLBACK"
+        ],
+        solution: "COMMIT"
+      },
+      {
+        id: 2,
+        title: "Isolation Level Demo",
+        description: "Observe how different isolation levels affect concurrent transactions",
+        type: "isolation",
+        scenario: "Two users trying to book the last seat on a flight simultaneously",
+        options: ["READ UNCOMMITTED", "READ COMMITTED", "REPEATABLE READ", "SERIALIZABLE"],
+        solution: "SERIALIZABLE"
+      },
+      {
+        id: 3,
+        title: "Rollback Scenario",
+        description: "Handle a failed transaction and understand atomicity",
+        type: "rollback",
+        scenario: "Update user profile, but email validation fails midway",
+        solution: "ROLLBACK"
+      }
+    ],
+    'indexing': [
+      {
+        id: 1,
+        title: "B-Tree Navigation",
+        description: "Navigate through a B-tree index to find a specific record",
+        type: "navigation",
+        scenario: "Find user with ID 847 in a B-tree with branching factor 3",
+        steps: ["Root: [400, 800]", "Left: [200, 300]", "Middle: [500, 600, 700]", "Right: [850, 900]"],
+        solution: "Right subtree"
+      },
+      {
+        id: 2,
+        title: "Index Performance Analysis",
+        description: "Compare query performance with and without indexes",
+        type: "performance",
+        scenario: "Query: SELECT * FROM users WHERE email = 'john@example.com'",
+        options: ["Full table scan: O(n)", "B-tree index: O(log n)", "Hash index: O(1)", "Depends on data"],
+        solution: "B-tree index: O(log n)"
+      },
+      {
+        id: 3,
+        title: "Composite Index Design",
+        description: "Design an optimal composite index for multi-column queries",
+        type: "design",
+        scenario: "Optimize: SELECT * FROM orders WHERE customer_id = ? AND order_date > ? ORDER BY order_date",
+        solution: "CREATE INDEX idx_orders_customer_date ON orders(customer_id, order_date)"
+      }
+    ]
+  };
+
+  const exercises = exercisesByModule[moduleId] || [];
+  const currentEx = exercises[currentExercise];
+
+  const checkAnswer = () => {
+    if (!currentEx) return;
+    
+    const normalizedInput = userInput.trim().toLowerCase();
+    const normalizedSolution = currentEx.solution.toLowerCase();
+    
+    if (normalizedInput.includes(normalizedSolution) || normalizedInput === normalizedSolution) {
+      setFeedback({ type: 'success', message: 'Correct! Well done!' });
+      toast.success("Correct answer!");
+      
+      if (currentExercise === exercises.length - 1) {
+        setIsCompleted(true);
+        toast.success("Practice session completed!");
+      }
+    } else {
+      setFeedback({ type: 'error', message: `Not quite right. Hint: The answer involves "${currentEx.solution}"` });
+      toast.error("Try again!");
+    }
+  };
+
+  const nextExercise = () => {
+    if (currentExercise < exercises.length - 1) {
+      setCurrentExercise(prev => prev + 1);
+      setUserInput('');
+      setFeedback(null);
+    }
+  };
+
+  const resetExercises = () => {
+    setCurrentExercise(0);
+    setUserInput('');
+    setFeedback(null);
+    setIsCompleted(false);
+  };
+
+  if (exercises.length === 0) {
+    return (
+      <Card>
+        <CardContent className="h-96 flex items-center justify-center">
+          <div className="text-center space-y-4">
+            <div className="w-16 h-16 rounded-full bg-muted flex items-center justify-center mx-auto">
+              <Target className="h-8 w-8 text-muted-foreground" />
+            </div>
+            <h3 className="text-xl font-semibold">Practice Exercises Coming Soon</h3>
+            <p className="text-muted-foreground">
+              Interactive practice exercises for this module are being developed.
+            </p>
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
+
+  if (isCompleted) {
+    return (
+      <Card>
+        <CardContent className="h-96 flex items-center justify-center">
+          <div className="text-center space-y-4">
+            <div className="w-16 h-16 rounded-full bg-green-100 flex items-center justify-center mx-auto">
+              <CheckCircle className="h-8 w-8 text-green-600" />
+            </div>
+            <h3 className="text-xl font-semibold">Practice Complete!</h3>
+            <p className="text-muted-foreground">
+              You've successfully completed all practice exercises for this module.
+            </p>
+            <Button onClick={resetExercises} variant="outline">
+              <RotateCcw className="mr-2 h-4 w-4" />
+              Practice Again
+            </Button>
+          </div>
+        </CardContent>
+      </Card>
+    );
+  }
+
+  return (
+    <Card>
+      <CardHeader>
+        <div className="flex items-center justify-between">
+          <CardTitle className="flex items-center gap-2">
+            <Target className="h-5 w-5 text-primary" />
+            Exercise {currentExercise + 1} of {exercises.length}
+          </CardTitle>
+          <Badge variant="outline">
+            {Math.round(((currentExercise + 1) / exercises.length) * 100)}%
+          </Badge>
+        </div>
+        <Progress value={((currentExercise + 1) / exercises.length) * 100} className="h-2" />
+      </CardHeader>
+      
+      <CardContent className="space-y-6">
+        <div className="space-y-3">
+          <h3 className="text-lg font-semibold">{currentEx.title}</h3>
+          <p className="text-muted-foreground">{currentEx.description}</p>
+          
+          <div className="p-4 bg-muted/50 rounded-lg">
+            <h4 className="font-medium mb-2">Scenario:</h4>
+            <p className="text-sm">{currentEx.scenario}</p>
+          </div>
+          
+          {currentEx.steps && (
+            <div className="space-y-2">
+              <h4 className="font-medium">Steps:</h4>
+              <ul className="text-sm space-y-1">
+                {currentEx.steps.map((step: string, idx: number) => (
+                  <li key={idx} className="flex items-center gap-2">
+                    <div className="w-5 h-5 rounded-full bg-primary text-white text-xs flex items-center justify-center">
+                      {idx + 1}
+                    </div>
+                    {step}
+                  </li>
+                ))}
+              </ul>
+            </div>
+          )}
+          
+          {currentEx.options && (
+            <div className="space-y-2">
+              <h4 className="font-medium">Choose the best option:</h4>
+              <div className="grid gap-2">
+                {currentEx.options.map((option: string, idx: number) => (
+                  <button
+                    key={idx}
+                    onClick={() => setUserInput(option)}
+                    className={`text-left p-3 border rounded-lg transition-colors ${
+                      userInput === option 
+                        ? 'border-primary bg-primary/10' 
+                        : 'border-muted hover:border-primary/50'
+                    }`}
+                  >
+                    {option}
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
+          
+          {/* Input field for queries (SQL exercises) */}
+          {(currentEx.type === 'query' || !currentEx.options) && currentEx.type !== 'transaction' && currentEx.type !== 'design' && (
+            <div className="space-y-2">
+              <Label htmlFor="answer-input" className="font-medium">
+                {currentEx.question || "Your answer:"}
+              </Label>
+              <Textarea
+                id="answer-input"
+                value={userInput}
+                onChange={(e) => setUserInput(e.target.value)}
+                placeholder={currentEx.type === 'query' ? "Enter your SQL query here..." : "Enter your answer..."}
+                className="font-mono text-sm"
+                rows={currentEx.type === 'query' ? 4 : 2}
+              />
+            </div>
+          )}
+          
+          {currentEx.type === 'transaction' && (
+            <div className="space-y-2">
+              <Label htmlFor="transaction-input" className="font-medium">What should happen next?</Label>
+              <Input
+                id="transaction-input"
+                value={userInput}
+                onChange={(e) => setUserInput(e.target.value)}
+                placeholder="Enter COMMIT or ROLLBACK"
+                className="font-mono"
+              />
+            </div>
+          )}
+          
+          {currentEx.type === 'design' && (
+            <div className="space-y-2">
+              <Label htmlFor="design-input" className="font-medium">Write the SQL statement:</Label>
+              <Textarea
+                id="design-input"
+                value={userInput}
+                onChange={(e) => setUserInput(e.target.value)}
+                placeholder="CREATE INDEX ..."
+                className="font-mono text-sm"
+                rows={3}
+              />
+            </div>
+          )}
+        </div>
+        
+        {feedback && (
+          <div className={`p-3 rounded-lg border ${
+            feedback.type === 'success' 
+              ? 'border-green-200 bg-green-50 text-green-700'
+              : feedback.type === 'error'
+              ? 'border-red-200 bg-red-50 text-red-700'
+              : 'border-blue-200 bg-blue-50 text-blue-700'
+          }`}>
+            <div className="flex items-center gap-2">
+              {feedback.type === 'success' && <CheckCircle className="h-4 w-4" />}
+              {feedback.type === 'error' && <XCircle className="h-4 w-4" />}
+              {feedback.type === 'info' && <Lightbulb className="h-4 w-4" />}
+              <span className="font-medium">{feedback.message}</span>
+            </div>
+          </div>
+        )}
+        
+        <div className="flex justify-between">
+          <Button 
+            onClick={() => {
+              if (currentExercise > 0) {
+                setCurrentExercise(prev => prev - 1);
+                setUserInput('');
+                setFeedback(null);
+              }
+            }}
+            variant="outline" 
+            disabled={currentExercise === 0}
+          >
+            <ArrowLeft className="mr-2 h-4 w-4" />
+            Previous
+          </Button>
+          
+          <div className="flex gap-2">
+            <Button onClick={checkAnswer} disabled={!userInput.trim()}>
+              <CheckCircle className="mr-2 h-4 w-4" />
+              Check Answer
+            </Button>
+            {feedback?.type === 'success' && currentExercise < exercises.length - 1 && (
+              <Button onClick={nextExercise}>
+                Next Exercise
+                <ArrowRight className="ml-2 h-4 w-4" />
+              </Button>
+            )}
+          </div>
+        </div>
+      </CardContent>
+    </Card>
   );
 }
