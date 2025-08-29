@@ -336,6 +336,43 @@ app.get('/api/networking/modules', async (req, res) => {
     }
 });
 
+// Generic GET proxy for /api/*
+app.get('/api/*', async (req, res) => {
+    const targetUrl = `http://localhost:3001${req.originalUrl}`;
+    try {
+        const response = await fetch(targetUrl, {
+            method: 'GET',
+            headers: {
+                'Authorization': req.headers.authorization,
+                'Content-Type': 'application/json'
+            }
+        });
+        const data = await response.json();
+        res.status(response.status).json(data);
+    } catch (error) {
+        res.status(500).json({ error: 'Proxy error', message: error.message });
+    }
+});
+
+// Generic POST proxy for /api/*
+app.post('/api/*', async (req, res) => {
+    const targetUrl = `http://localhost:3001${req.originalUrl}`;
+    try {
+        const response = await fetch(targetUrl, {
+            method: 'POST',
+            headers: {
+                'Authorization': req.headers.authorization,
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify(req.body)
+        });
+        const data = await response.json();
+        res.status(response.status).json(data);
+    } catch (error) {
+        res.status(500).json({ error: 'Proxy error', message: error.message });
+    }
+});
+
 // Health check endpoint
 app.get('/health', (req, res) => {
     res.json({ status: 'OK', message: 'CORS Proxy is running' });

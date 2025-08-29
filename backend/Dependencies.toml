@@ -324,6 +324,7 @@ dependencies = [
 ]
 modules = [
 	{org = "itsme", packageName = "backend", moduleName = "backend"},
+	{org = "itsme", packageName = "backend", moduleName = "backend.database"},
 	{org = "itsme", packageName = "backend", moduleName = "backend.networking"}
 ]
 
