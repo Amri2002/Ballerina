@@ -1,4 +1,5 @@
 import ballerina/http;
+import backend.database as database;
 import ballerina/time;
 import ballerinax/mongodb;
 import ballerina/log;
@@ -287,176 +288,14 @@ service /api on httpListener {
     }
 
     // Progress tracking endpoints
-    resource function post user_progress_mark_completed(http:Request req) returns http:Response|error {
-        // Check authentication
-        string|http:HeaderNotFoundError authHeader = req.getHeader("Authorization");
-        if (authHeader is string && authHeader.startsWith("Bearer ")) {
-            string token = authHeader.substring(7, authHeader.length());
-            map<anydata>? userMapOpt = sessionStore[token];
-            
-            if userMapOpt is map<anydata> {
-                string userId = <string>userMapOpt["id"];
-                
-                json|error payloadOrError = req.getJsonPayload();
-                if (payloadOrError is error) {
-                    return createResponse(400, "Invalid JSON", "Invalid JSON payload");
-                }
-                
-                json payload = payloadOrError;
-                string moduleId = "";
-                json|error moduleIdField = payload.moduleId;
-                if (moduleIdField is string) {
-                    moduleId = moduleIdField;
-                }
-                
-                if (moduleId == "") {
-                    return createResponse(400, "Missing moduleId", "Required field missing");
-                }
-                
-                // Connect to progress collection
-                mongodb:Database|error dbResult = mongoClient->getDatabase("learning_platform");
-                if (dbResult is error) {
-                    return createResponse(500, "Database connection failed", dbResult.message());
-                }
-                
-                mongodb:Database db = dbResult;
-                mongodb:Collection|error collectionResult = db->getCollection("user_progress");
-                if (collectionResult is error) {
-                    return createResponse(500, "Collection access failed", collectionResult.message());
-                }
-                
-                mongodb:Collection progressCollection = collectionResult;
-                
-                // Check if progress exists
-                map<json> filter = { userId: userId };
-                stream<record {}, error?>|error findResult = progressCollection->find(filter);
-                if (findResult is error) {
-                    return createResponse(500, "Database query failed", findResult.message());
-                }
-                
-                stream<record {}, error?> resultStream = findResult;
-                record {}[] data = [];
-                error? forEachResult = resultStream.forEach(function(record {} value) {
-                    data.push(value);
-                });
-                
-                if (forEachResult is error) {
-                    return createResponse(500, "Data processing failed", forEachResult.message());
-                }
-                
-                if (data.length() == 0) {
-                    // Create new progress record
-                    record {|
-                        string userId;
-                        string[] completedModules;
-                        string lastUpdated;
-                    |} progressDoc = {
-                        userId: userId,
-                        completedModules: [moduleId],
-                        lastUpdated: time:utcNow().toString()
-                    };
-                    
-                    error? insertResult = progressCollection->insertOne(progressDoc);
-                    if (insertResult is error) {
-                        return createResponse(500, "Failed to create progress record", insertResult.message());
-                    }
-                } else {
-                    // Update existing progress
-                    map<anydata> progressMap = <map<anydata>>data[0];
-                    json[] completedModulesJson = <json[]>progressMap["completedModules"];
-                    string[] completedModules = [];
-                    foreach var module in completedModulesJson {
-                        if (module is string) {
-                            completedModules.push(module);
-                        }
-                    }
-                    // Check if module is already completed
-                    boolean alreadyCompleted = false;
-                    foreach var completedModule in completedModules {
-                        if (completedModule == moduleId) {
-                            alreadyCompleted = true;
-                            break;
-                        }
-                    }
-                    if (!alreadyCompleted) {
-                        completedModules.push(moduleId);
-                        map<json> updateFilter = { userId: userId };
-                        map<json> updateFields = {
-                            completedModules: completedModules,
-                            lastUpdated: time:utcNow().toString()
-                        };
-                        mongodb:Update updateDoc = { "$set": updateFields };
-                        var updateResult = progressCollection->updateOne(updateFilter, updateDoc);
-                        if (updateResult is error) {
-                            return createResponse(500, "Failed to update progress", updateResult.message());
-                        }
-                    }
-                }
-                
-                return createResponse(200, "{\"message\": \"Progress updated successfully\", \"moduleId\": \"" + moduleId + "\"}", ());
-            } else {
-                return createResponse(401, "Invalid token", "Session not found");
-            }
-        } else {
-            return createResponse(401, "Unauthorized", "Missing or invalid authorization header");
+        // Progress tracking endpoints are now handled in the database module
+        resource function post user_progress_mark_completed(http:Request req) returns http:Response|error {
+        return database:user_progress_mark_completed(req, sessionStore, mongoClient);
         }
-    }
 
-    resource function get user/progress(http:Request req) returns http:Response|error {
-        // Check authentication
-        string|http:HeaderNotFoundError authHeader = req.getHeader("Authorization");
-        if (authHeader is string && authHeader.startsWith("Bearer ")) {
-            string token = authHeader.substring(7, authHeader.length());
-            map<anydata>? userMapOpt = sessionStore[token];
-            
-            if userMapOpt is map<anydata> {
-                string userId = <string>userMapOpt["id"];
-                
-                // Connect to progress collection
-                mongodb:Database|error dbResult = mongoClient->getDatabase("learning_platform");
-                if (dbResult is error) {
-                    return createResponse(500, "Database connection failed", dbResult.message());
-                }
-                
-                mongodb:Database db = dbResult;
-                mongodb:Collection|error collectionResult = db->getCollection("user_progress");
-                if (collectionResult is error) {
-                    return createResponse(500, "Collection access failed", collectionResult.message());
-                }
-                
-                mongodb:Collection progressCollection = collectionResult;
-                
-                // Find user progress
-                map<json> filter = { userId: userId };
-                stream<record {}, error?>|error findResult = progressCollection->find(filter);
-                if (findResult is error) {
-                    return createResponse(500, "Database query failed", findResult.message());
-                }
-                
-                stream<record {}, error?> resultStream = findResult;
-                record {}[] data = [];
-                error? forEachResult = resultStream.forEach(function(record {} value) {
-                    data.push(value);
-                });
-                
-                if (forEachResult is error) {
-                    return createResponse(500, "Data processing failed", forEachResult.message());
-                }
-                
-                if (data.length() == 0) {
-                    // Return empty progress
-                    return createResponse(200, "{\"completedModules\": [], \"userId\": \"" + userId + "\"}", ());
-                } else {
-                    map<anydata> progressMap = <map<anydata>>data[0];
-                    return createResponse(200, progressMap.toString(), ());
-                }
-            } else {
-                return createResponse(401, "Invalid token", "Session not found");
-            }
-        } else {
-            return createResponse(401, "Unauthorized", "Missing or invalid authorization header");
+        resource function get user/progress(http:Request req) returns http:Response|error {
+        return database:get_user_progress(req, sessionStore, mongoClient);
         }
-    }
 
     // Global OPTIONS handler for CORS preflight requests
     resource function options .() returns http:Response {
