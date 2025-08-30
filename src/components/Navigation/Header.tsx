@@ -93,7 +93,11 @@ export function Header() {
           {isAuthenticated ? (
             <>
               <Link to="/dashboard">
-                <Button variant="ghost" size="sm">
+                <Button
+                  variant={location.pathname === "/dashboard" ? "secondary" : "ghost"}
+                  size="sm"
+                  className={location.pathname === "/dashboard" ? "bg-accent text-accent-foreground hover:bg-accent" : ""}
+                >
                   Dashboard
                 </Button>
               </Link>
