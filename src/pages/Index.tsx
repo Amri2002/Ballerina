@@ -97,7 +97,7 @@ const Index = () => {
               ]}
               icon={<GitBranch className="h-6 w-6" />}
               href="/dsa"
-              difficulty="Beginner"
+             
             />
             
             <ModuleCard
@@ -111,7 +111,7 @@ const Index = () => {
               ]}
               icon={<Network className="h-6 w-6" />}
               href="/networking"
-              difficulty="Intermediate"
+          
             />
             
             <ModuleCard
@@ -125,7 +125,7 @@ const Index = () => {
               ]}
               icon={<Database className="h-6 w-6" />}
               href="/databases"
-              difficulty="Intermediate"
+            
             />
           </div>
         </div>
