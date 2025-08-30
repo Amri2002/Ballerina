@@ -1,6 +1,34 @@
 import ballerina/http;
-import ballerina/time;
 import ballerinax/mongodb;
+import ballerina/log;
+
+
+const string DATABASE = "learning_platform";
+const string COLLECTION = "user_progress";
+
+function updateUserProgress(string userId, string[] completedModules) returns error? {
+    http:Client|error clientOrError = new("http://localhost:4001");
+    if (clientOrError is http:Client) {
+        json payload = { userId: userId, completedModules: completedModules };
+        http:Response|error respOrError = clientOrError->post("/update-progress", payload);
+        if (respOrError is http:Response) {
+            json|error respJson = respOrError.getJsonPayload();
+            if (respJson is json) {
+                log:printInfo("Progress microservice response: " + respJson.toString());
+                return;
+            } else {
+                log:printError("Progress microservice error: " + respJson.message());
+                return respJson;
+            }
+        } else {
+            log:printError("Progress microservice HTTP error: " + respOrError.message());
+            return respOrError;
+        }
+    } else {
+        log:printError("Failed to create HTTP client: " + clientOrError.message());
+        return clientOrError;
+    }
+}
 
 // Progress tracking: mark module completed
 public function user_progress_mark_completed(http:Request req, map<map<anydata>> sessionStore, mongodb:Client mongoClient) returns http:Response|error {
@@ -23,12 +51,13 @@ public function user_progress_mark_completed(http:Request req, map<map<anydata>>
             if (moduleId == "") {
                 return createResponse(400, "Missing moduleId", "Required field missing");
             }
-            mongodb:Database|error dbResult = mongoClient->getDatabase("learning_platform");
+            // Query MongoDB for previous completed modules
+            mongodb:Database|error dbResult = mongoClient->getDatabase(DATABASE);
             if (dbResult is error) {
                 return createResponse(500, "Database connection failed", dbResult.message());
             }
             mongodb:Database db = dbResult;
-            mongodb:Collection|error collectionResult = db->getCollection("user_progress");
+            mongodb:Collection|error collectionResult = db->getCollection(COLLECTION);
             if (collectionResult is error) {
                 return createResponse(500, "Collection access failed", collectionResult.message());
             }
@@ -46,16 +75,9 @@ public function user_progress_mark_completed(http:Request req, map<map<anydata>>
             if (forEachResult is error) {
                 return createResponse(500, "Data processing failed", forEachResult.message());
             }
+            string[] completedModules;
             if (data.length() == 0) {
-                record {| string userId; string[] completedModules; string lastUpdated; |} progressDoc = {
-                    userId: userId,
-                    completedModules: [moduleId],
-                    lastUpdated: time:utcNow().toString()
-                };
-                error? insertResult = progressCollection->insertOne(progressDoc);
-                if (insertResult is error) {
-                    return createResponse(500, "Failed to create progress record", insertResult.message());
-                }
+                completedModules = [moduleId];
             } else {
                 map<anydata> progressMap = <map<anydata>>data[0];
                 anydata[] completedModulesAny = [];
@@ -65,7 +87,7 @@ public function user_progress_mark_completed(http:Request req, map<map<anydata>>
                         completedModulesAny = completedRaw;
                     }
                 }
-                string[] completedModules = [];
+                completedModules = [];
                 foreach var module in completedModulesAny {
                     if (module is string) {
                         completedModules.push(module);
@@ -80,17 +102,11 @@ public function user_progress_mark_completed(http:Request req, map<map<anydata>>
                 }
                 if (!alreadyCompleted) {
                     completedModules.push(moduleId);
-                    map<json> updateFilter = { userId: userId };
-                    map<json> updateFields = {
-                        completedModules: completedModules,
-                        lastUpdated: time:utcNow().toString()
-                    };
-                    mongodb:Update updateDoc = { "$set": updateFields };
-                    var updateResult = progressCollection->updateOne(updateFilter, updateDoc);
-                    if (updateResult is error) {
-                        return createResponse(500, "Failed to update progress", updateResult.message());
-                    }
                 }
+            }
+            error? updateErr = updateUserProgress(userId, completedModules);
+            if (updateErr is error) {
+                return createResponse(500, "Failed to update progress via microservice", updateErr.message());
             }
             return createResponse(200, "{\"message\": \"Progress updated successfully\", \"moduleId\": \"" + moduleId + "\"}", ());
         } else {
