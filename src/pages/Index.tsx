@@ -2,6 +2,7 @@ import { Button } from "@/components/ui/button";
 import { FeatureCard } from "@/components/ui/feature-card";
 import { ModuleCard } from "@/components/ui/module-card";
 import { Header } from "@/components/Navigation/Header";
+import Forum from "./Forum";
 import { 
   BookOpen, 
   Target, 
