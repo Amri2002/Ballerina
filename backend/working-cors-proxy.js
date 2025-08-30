@@ -336,71 +336,39 @@ app.get('/api/networking/modules', async (req, res) => {
     }
 });
 
-// Add missing networking endpoints that frontend is calling
-app.get('/api/networking/topology/types', async (req, res) => {
+// Generic GET proxy for /api/*
+app.get('/api/*', async (req, res) => {
+    const targetUrl = `http://localhost:3001${req.originalUrl}`;
     try {
-        const targetUrl = 'http://localhost:3001/api/networking/topology/types';
-        console.log(`🔄 Proxying GET /api/networking/topology/types to ${targetUrl}`);
-        
         const response = await fetch(targetUrl, {
             method: 'GET',
             headers: {
+                'Authorization': req.headers.authorization,
                 'Content-Type': 'application/json'
             }
         });
-        
         const data = await response.json();
-        console.log(`✅ Response: ${response.status} for topology types`);
-        
         res.status(response.status).json(data);
     } catch (error) {
-        console.error(`❌ Error proxying topology types:`, error);
         res.status(500).json({ error: 'Proxy error', message: error.message });
     }
 });
 
-app.post('/api/networking/topology/simulate', async (req, res) => {
+// Generic POST proxy for /api/*
+app.post('/api/*', async (req, res) => {
+    const targetUrl = `http://localhost:3001${req.originalUrl}`;
     try {
-        const targetUrl = 'http://localhost:3001/api/networking/topology/simulate';
-        console.log(`🔄 Proxying POST /api/networking/topology/simulate to ${targetUrl}`);
-        
         const response = await fetch(targetUrl, {
             method: 'POST',
             headers: {
+                'Authorization': req.headers.authorization,
                 'Content-Type': 'application/json'
             },
             body: JSON.stringify(req.body)
         });
-        
         const data = await response.json();
-        console.log(`✅ Response: ${response.status} for topology simulate`);
-        
         res.status(response.status).json(data);
     } catch (error) {
-        console.error(`❌ Error proxying topology simulate:`, error);
-        res.status(500).json({ error: 'Proxy error', message: error.message });
-    }
-});
-
-app.post('/api/networking/topology/failure_test', async (req, res) => {
-    try {
-        const targetUrl = 'http://localhost:3001/api/networking/topology/failure_test';
-        console.log(`🔄 Proxying POST /api/networking/topology/failure_test to ${targetUrl}`);
-        
-        const response = await fetch(targetUrl, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify(req.body)
-        });
-        
-        const data = await response.json();
-        console.log(`✅ Response: ${response.status} for topology failure test`);
-        
-        res.status(response.status).json(data);
-    } catch (error) {
-        console.error(`❌ Error proxying topology failure test:`, error);
         res.status(500).json({ error: 'Proxy error', message: error.message });
     }
 });
