@@ -38,9 +38,21 @@ const App = () => (
         <BrowserRouter>
           <Routes>
             <Route path="/" element={<Index />} />
-            <Route path="/dsa" element={<DSA />} />
-            <Route path="/networking" element={<Networking />} />
-            <Route path="/databases" element={<Databases />} />
+            <Route path="/dsa" element={
+              <ProtectedRoute>
+                <DSA />
+              </ProtectedRoute>
+            } />
+            <Route path="/networking" element={
+              <ProtectedRoute>
+                <Networking />
+              </ProtectedRoute>
+            } />
+            <Route path="/databases" element={
+              <ProtectedRoute>
+                <Databases />
+              </ProtectedRoute>
+            } />
             <Route path="/about" element={<About />} />
             <Route path="/signin" element={
               <PublicRoute>
