@@ -52,23 +52,25 @@ function createIndexes() {
         log:printError("Failed to connect to database for indexing: " + dbResult.message());
         return;
     }
-    
     mongodb:Database db = dbResult;
     mongodb:Collection|error collectionResult = db->getCollection("user_progress");
     if (collectionResult is error) {
         log:printError("Failed to get collection for indexing: " + collectionResult.message());
         return;
     }
-    
     mongodb:Collection progressCollection = collectionResult;
-    
-    // Create index on userId for faster queries
+    // Drop all indexes except _id_
+    error? dropResult = progressCollection->dropIndexes();
+    if (dropResult is error) {
+        log:printError("Failed to drop indexes: " + dropResult.message());
+    }
+    // Create unique index on userId
     map<json> indexSpec = { userId: 1 };
     error? indexResult = progressCollection->createIndex(indexSpec, { unique: true });
     if (indexResult is error) {
-        log:printError("Failed to create index: " + indexResult.message());
+        log:printError("Failed to create userId index: " + indexResult.message());
     } else {
-        log:printInfo("Successfully created index on user_progress collection");
+        log:printInfo("Unique index on userId ensured for user_progress collection");
     }
 }
 
