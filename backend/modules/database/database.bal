@@ -108,7 +108,7 @@ public function user_progress_mark_completed(http:Request req, map<map<anydata>>
             if (updateErr is error) {
                 return createResponse(500, "Failed to update progress via microservice", updateErr.message());
             }
-            return createResponse(200, "{\"message\": \"Progress updated successfully\", \"moduleId\": \"" + moduleId + "\"}", ());
+            return createResponse(200, "{\"message\": \"Progress updated successfully\", \"moduleId\": \"" + moduleId + "\"}", null);
         } else {
             return createResponse(401, "Invalid token", "Session not found");
         }
@@ -151,10 +151,10 @@ public function get_user_progress(http:Request req, map<map<anydata>> sessionSto
                     return createResponse(500, "Data processing failed", forEachResult.message());
                 }
                 if (data.length() == 0) {
-                    return createResponse(200, "{\"completedModules\": [], \"userId\": \"" + userId + "\"}", ());
+                    return createResponse(200, "{\"completedModules\": [], \"userId\": \"" + userId + "\"}", null);
                 } else {
                     map<anydata> progressMap = <map<anydata>>data[0];
-                    return createResponse(200, progressMap.toString(), ());
+                    return createResponse(200, progressMap.toString(), null);
                 }
             } else {
                 return createResponse(401, "Invalid token", "User ID not found in session");
