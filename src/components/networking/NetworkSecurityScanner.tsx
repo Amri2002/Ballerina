@@ -202,10 +202,6 @@ const NetworkSecurityScanner: React.FC = () => {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center space-x-2">
-        <Shield className="h-6 w-6 text-red-600" />
-        <h1 className="text-2xl font-bold">Network Security Scanner</h1>
-      </div>
 
       <Card>
         <CardHeader>
