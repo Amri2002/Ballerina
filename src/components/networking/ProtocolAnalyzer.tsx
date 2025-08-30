@@ -162,10 +162,6 @@ const ProtocolAnalyzer: React.FC = () => {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center space-x-2">
-        <Network className="h-6 w-6 text-blue-600" />
-        <h1 className="text-2xl font-bold">Protocol Analyzer</h1>
-      </div>
 
       <Card>
         <CardHeader>
