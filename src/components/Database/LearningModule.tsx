@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
 import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
 import { Button } from "@/components/ui/button";
 import { Badge } from "@/components/ui/badge";
@@ -21,9 +21,11 @@ import {
   Database,
   Code,
   Target,
-  Lightbulb
+  Lightbulb,
+  Check
 } from "lucide-react";
 import { toast } from "sonner";
+import { progressService } from "@/services/progressService";
 
 interface Question {
   id: string;
@@ -341,6 +343,23 @@ export function LearningModule({ moduleId, onComplete }: Props) {
   const [answers, setAnswers] = useState<Record<string, any>>({});
   const [showResults, setShowResults] = useState(false);
   const [userAnswer, setUserAnswer] = useState('');
+  const [isModuleCompleted, setIsModuleCompleted] = useState(false);
+
+  useEffect(() => {
+    // Check if module is already completed
+    const checkModuleCompletion = async () => {
+      try {
+        const progress = await progressService.getUserProgress();
+        if (progress.completedModules.includes(moduleId)) {
+          setIsModuleCompleted(true);
+        }
+      } catch (error) {
+        console.error('Failed to check module completion:', error);
+      }
+    };
+
+    checkModuleCompletion();
+  }, [moduleId]);
 
   if (!module) {
     return <div>Module not found</div>;
@@ -356,14 +375,31 @@ export function LearningModule({ moduleId, onComplete }: Props) {
     setAnswers(prev => ({ ...prev, [questionId]: answer }));
   };
 
-  const nextQuestion = () => {
+  const markModuleAsCompleted = async () => {
+    try {
+      await progressService.markModuleCompleted(moduleId);
+      setIsModuleCompleted(true);
+      toast.success("Module marked as completed!");
+    } catch (error) {
+      console.error('Failed to mark module as completed:', error);
+      toast.error("Failed to save progress. Please try again.");
+    }
+  };
+
+  const nextQuestion = async () => {
     if (currentQuestion < module.questions.length - 1) {
       setCurrentQuestion(prev => prev + 1);
       setUserAnswer('');
     } else {
       setShowResults(true);
-      if (correctAnswers / module.questions.length >= 0.7) {
+      const score = correctAnswers / module.questions.length;
+      
+      if (score >= 0.7) {
         toast.success("Congratulations! You passed the module!");
+        // Mark module as completed if user passes
+        if (!isModuleCompleted) {
+          await markModuleAsCompleted();
+        }
         onComplete?.();
       } else {
         toast.error("You need 70% to pass. Try again!");
@@ -397,6 +433,12 @@ export function LearningModule({ moduleId, onComplete }: Props) {
               <CardTitle className="flex items-center gap-2">
                 <BookOpen className="h-5 w-5 text-database" />
                 {module.title}
+                {isModuleCompleted && (
+                  <Badge className="ml-2 bg-green-100 text-green-800">
+                    <Check className="h-3 w-3 mr-1" />
+                    Completed
+                  </Badge>
+                )}
               </CardTitle>
               <p className="text-muted-foreground mt-1">{module.description}</p>
             </div>
@@ -496,6 +538,11 @@ export function LearningModule({ moduleId, onComplete }: Props) {
                         <CheckCircle className="h-5 w-5" />
                         <span className="font-medium">Congratulations! You passed the module!</span>
                       </div>
+                      {!isModuleCompleted && (
+                        <p className="text-sm mt-2">
+                          Your progress has been saved. This module is now marked as completed.
+                        </p>
+                      )}
                     </div>
                   ) : (
                     <div className="p-4 bg-red-50 border border-red-200 rounded-lg">
@@ -623,7 +670,7 @@ export function LearningModule({ moduleId, onComplete }: Props) {
   );
 }
 
-// Practice Exercises Component
+// Practice Exercises Component (keep this exactly as it is)
 function PracticeExercises({ moduleId }: { moduleId: string }) {
   const [currentExercise, setCurrentExercise] = useState(0);
   const [userInput, setUserInput] = useState('');

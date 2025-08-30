@@ -1,4 +1,5 @@
-import { useState } from "react";
+// src/pages/Databases.tsx
+import { useState, useEffect } from "react";
 import { Button } from "@/components/ui/button";
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
@@ -18,8 +19,10 @@ import {
   FileText,
   GitMerge,
   Lock,
-  BarChart3
+  BarChart3,
+  Check
 } from "lucide-react";
+import { progressService } from "@/services/progressService";
 
 const databaseTopics = [
   {
@@ -59,12 +62,35 @@ const databaseTopics = [
 export default function Databases() {
   const [activeView, setActiveView] = useState<'overview' | 'query-builder' | 'er-designer' | 'design-studio' | 'learning'>('overview');
   const [selectedModule, setSelectedModule] = useState<string | null>(null);
+  const [completedModules, setCompletedModules] = useState<string[]>([]);
+  const [loading, setLoading] = useState(true);
+
+  useEffect(() => {
+    const fetchProgress = async () => {
+      try {
+        const progress = await progressService.getUserProgress();
+        setCompletedModules(progress.completedModules);
+      } catch (error) {
+        console.error('Failed to fetch progress:', error);
+      } finally {
+        setLoading(false);
+      }
+    };
+
+    fetchProgress();
+  }, []);
 
   const difficultyColors = {
     Beginner: "bg-green-100 text-green-800 border-green-200",
     Intermediate: "bg-yellow-100 text-yellow-800 border-yellow-200",
     Advanced: "bg-red-100 text-red-800 border-red-200"
   };
+
+  // Add completion status to each topic
+  const databaseTopicsWithProgress = databaseTopics.map(topic => ({
+    ...topic,
+    completed: completedModules.includes(topic.id)
+  }));
 
   if (activeView === 'learning' && selectedModule) {
     return (
@@ -86,6 +112,10 @@ export default function Databases() {
             onComplete={() => {
               setActiveView('overview');
               setSelectedModule(null);
+              // Refresh progress after completion
+              progressService.getUserProgress()
+                .then(progress => setCompletedModules(progress.completedModules))
+                .catch(console.error);
             }}
           />
         </div>
@@ -196,13 +226,17 @@ export default function Databases() {
             
             <TabsContent value="concepts" className="mt-8">
               <div className="grid gap-6">
-                {databaseTopics.map((topic, index) => (
+                {databaseTopicsWithProgress.map((topic, index) => (
                   <Card key={topic.id} className="group hover:shadow-lg transition-all duration-300 hover:-translate-y-1">
                     <CardHeader className="pb-4">
                       <div className="flex items-start justify-between">
                         <div className="flex items-center space-x-3">
-                          <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center text-primary group-hover:bg-primary group-hover:text-primary-foreground transition-colors">
-                            {topic.icon}
+                          <div className={`w-10 h-10 rounded-lg flex items-center justify-center ${
+                            topic.completed 
+                              ? 'bg-green-100 text-green-600' 
+                              : 'bg-primary/10 text-primary group-hover:bg-primary group-hover:text-primary-foreground'
+                          } transition-colors`}>
+                            {topic.completed ? <Check className="h-5 w-5" /> : topic.icon}
                           </div>
                           <div>
                             <CardTitle className="text-lg font-semibold">
@@ -221,6 +255,11 @@ export default function Databases() {
                             <Clock className="mr-1 h-3 w-3" />
                             {topic.duration}
                           </Badge>
+                          {topic.completed && (
+                            <Badge variant="secondary" className="bg-green-100 text-green-800">
+                              Completed
+                            </Badge>
+                          )}
                         </div>
                       </div>
                     </CardHeader>
@@ -238,7 +277,7 @@ export default function Databases() {
                           }}
                         >
                           <Play className="mr-2 h-4 w-4" />
-                          Start Learning
+                          {topic.completed ? 'Review' : 'Start Learning'}
                           <ArrowRight className="ml-2 h-4 w-4" />
                         </Button>
                       </div>

@@ -1,8 +1,8 @@
 import ballerina/http;
+import backend.database as database;
 import ballerina/time;
 import ballerinax/mongodb;
 import ballerina/log;
-// import ballerina/io;
 
 const string JWT_ISSUER = "ballerina-backend";
 const string JWT_AUDIENCE = "ballerina-frontend";
@@ -44,6 +44,39 @@ function createResponse(int statusCode, string payload, string? errorMessage) re
 // In-memory session store
 map<map<anydata>> sessionStore = {};
 
+// Initialize MongoDB indexes
+function createIndexes() {
+    mongodb:Database|error dbResult = mongoClient->getDatabase("learning_platform");
+    if (dbResult is error) {
+        log:printError("Failed to connect to database for indexing: " + dbResult.message());
+        return;
+    }
+    
+    mongodb:Database db = dbResult;
+    mongodb:Collection|error collectionResult = db->getCollection("user_progress");
+    if (collectionResult is error) {
+        log:printError("Failed to get collection for indexing: " + collectionResult.message());
+        return;
+    }
+    
+    mongodb:Collection progressCollection = collectionResult;
+    
+    // Create index on userId for faster queries
+    map<json> indexSpec = { userId: 1 };
+    error? indexResult = progressCollection->createIndex(indexSpec, { unique: true });
+    if (indexResult is error) {
+        log:printError("Failed to create index: " + indexResult.message());
+    } else {
+        log:printInfo("Successfully created index on user_progress collection");
+    }
+}
+
+// Call this during initialization
+// Call createIndexes inside a function or at module level, not in the global scope
+function init() {
+    createIndexes();
+}
+
 service /api on httpListener {
 
     // Test endpoint to verify backend is working
@@ -66,11 +99,11 @@ service /api on httpListener {
         
         mongodb:Collection testCollection = collectionResult;
         
-        record {
+        record {|
             string message;
             string timestamp;
             string endpoint;
-        } testDoc = {
+        |} testDoc = {
             message: "Test from /test endpoint",
             timestamp: time:utcNow().toString(),
             endpoint: "/api/test"
@@ -155,14 +188,14 @@ service /api on httpListener {
         }
         
         // Create user document
-        record {
+        record {|
             string id;
             string email;
             string password;
             string name;
             string timestamp;
             string role;
-        } userDoc = {
+        |} userDoc = {
             id: "user_" + time:utcNow().toString(),
             email: email,
             password: password, // In production, hash this password
@@ -254,6 +287,15 @@ service /api on httpListener {
         }
     }
 
+    // Progress tracking endpoints
+        // Progress tracking endpoints are now handled in the database module
+        resource function post user_progress_mark_completed(http:Request req) returns http:Response|error {
+        return database:user_progress_mark_completed(req, sessionStore, mongoClient);
+        }
+
+        resource function get user/progress(http:Request req) returns http:Response|error {
+        return database:get_user_progress(req, sessionStore, mongoClient);
+        }
 
     // Global OPTIONS handler for CORS preflight requests
     resource function options .() returns http:Response {
