@@ -186,10 +186,6 @@ const PerformanceMonitor: React.FC = () => {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center space-x-2">
-        <Activity className="h-6 w-6 text-green-600" />
-        <h1 className="text-2xl font-bold">Performance Monitor</h1>
-      </div>
 
       <Card>
         <CardHeader>
