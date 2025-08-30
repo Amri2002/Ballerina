@@ -108,35 +108,40 @@ public function get_user_progress(http:Request req, map<map<anydata>> sessionSto
         string token = authHeader.substring(7, authHeader.length());
         map<anydata>? userMapOpt = sessionStore[token];
         if userMapOpt is map<anydata> {
-            string userId = <string>userMapOpt["id"];
-            mongodb:Database|error dbResult = mongoClient->getDatabase("learning_platform");
-            if (dbResult is error) {
-                return createResponse(500, "Database connection failed", dbResult.message());
-            }
-            mongodb:Database db = dbResult;
-            mongodb:Collection|error collectionResult = db->getCollection("user_progress");
-            if (collectionResult is error) {
-                return createResponse(500, "Collection access failed", collectionResult.message());
-            }
-            mongodb:Collection progressCollection = collectionResult;
-            map<json> filter = { userId: userId };
-            stream<record {}, error?>|error findResult = progressCollection->find(filter);
-            if (findResult is error) {
-                return createResponse(500, "Database query failed", findResult.message());
-            }
-            stream<record {}, error?> resultStream = findResult;
-            record {}[] data = [];
-            error? forEachResult = resultStream.forEach(function(record {} value) {
-                data.push(value);
-            });
-            if (forEachResult is error) {
-                return createResponse(500, "Data processing failed", forEachResult.message());
-            }
-            if (data.length() == 0) {
-                return createResponse(200, "{\"completedModules\": [], \"userId\": \"" + userId + "\"}", ());
+            anydata userIdRaw = userMapOpt["id"];
+            if (userIdRaw is string) {
+                string userId = userIdRaw;
+                mongodb:Database|error dbResult = mongoClient->getDatabase("learning_platform");
+                if (dbResult is error) {
+                    return createResponse(500, "Database connection failed", dbResult.message());
+                }
+                mongodb:Database db = dbResult;
+                mongodb:Collection|error collectionResult = db->getCollection("user_progress");
+                if (collectionResult is error) {
+                    return createResponse(500, "Collection access failed", collectionResult.message());
+                }
+                mongodb:Collection progressCollection = collectionResult;
+                map<json> filter = { userId: userId };
+                stream<record {}, error?>|error findResult = progressCollection->find(filter);
+                if (findResult is error) {
+                    return createResponse(500, "Database query failed", findResult.message());
+                }
+                stream<record {}, error?> resultStream = findResult;
+                record {}[] data = [];
+                error? forEachResult = resultStream.forEach(function(record {} value) {
+                    data.push(value);
+                });
+                if (forEachResult is error) {
+                    return createResponse(500, "Data processing failed", forEachResult.message());
+                }
+                if (data.length() == 0) {
+                    return createResponse(200, "{\"completedModules\": [], \"userId\": \"" + userId + "\"}", ());
+                } else {
+                    map<anydata> progressMap = <map<anydata>>data[0];
+                    return createResponse(200, progressMap.toString(), ());
+                }
             } else {
-                map<anydata> progressMap = <map<anydata>>data[0];
-                return createResponse(200, progressMap.toString(), ());
+                return createResponse(401, "Invalid token", "User ID not found in session");
             }
         } else {
             return createResponse(401, "Invalid token", "Session not found");
