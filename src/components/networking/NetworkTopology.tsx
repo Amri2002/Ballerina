@@ -751,33 +751,6 @@ export default function NetworkTopology() {
 
   return (
     <div className="space-y-6">
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h2 className="text-2xl font-bold">Network Topology Learning</h2>
-          <p className="text-muted-foreground">
-            Explore different network topologies with interactive simulations and failure scenarios
-          </p>
-        </div>
-        <div className="flex items-center space-x-2">
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => setShowAdvantages(!showAdvantages)}
-          >
-            {showAdvantages ? 'Hide' : 'Show'} Analysis
-          </Button>
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={saveTopologyToBackend}
-            disabled={isLoading}
-          >
-            <Save className="h-4 w-4 mr-1" />
-            Save to Backend
-          </Button>
-        </div>
-      </div>
 
       <div className="grid grid-cols-1 lg:grid-cols-4 gap-6">
         {/* Topology Selection */}
