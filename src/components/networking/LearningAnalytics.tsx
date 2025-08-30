@@ -253,10 +253,6 @@ const LearningAnalytics: React.FC = () => {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center space-x-2">
-        <TrendingUp className="h-6 w-6 text-purple-600" />
-        <h1 className="text-2xl font-bold">Learning Analytics</h1>
-      </div>
 
       {/* Overview Cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
