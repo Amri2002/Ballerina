@@ -247,24 +247,6 @@ export default function OSIModel() {
 
   return (
     <div className="space-y-6">
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h2 className="text-2xl font-bold">OSI Model Visualization</h2>
-          <p className="text-muted-foreground">
-            Visualize packet flow through the 7 layers of the OSI model
-          </p>
-        </div>
-        <div className="flex items-center space-x-2">
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => setShowDetails(!showDetails)}
-          >
-            {showDetails ? 'Hide' : 'Show'} Details
-          </Button>
-        </div>
-      </div>
 
       {/* Controls */}
       <Card>
