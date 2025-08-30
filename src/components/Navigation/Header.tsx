@@ -89,7 +89,7 @@ export function Header() {
         {/* Desktop Auth Buttons */}
         <div className="hidden md:flex items-center space-x-2">
           {isAuthenticated ? (
-            <div className="flex items-center space-x-2">
+            <>
               <Link to="/dashboard">
                 <Button variant="ghost" size="sm">
                   Dashboard
@@ -103,13 +103,19 @@ export function Header() {
                   </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end">
+                  <Link to="/profile">
+                    <DropdownMenuItem>
+                      <User className="h-4 w-4 mr-2" />
+                      Profile
+                    </DropdownMenuItem>
+                  </Link>
                   <DropdownMenuItem onClick={handleLogout}>
                     <LogOut className="h-4 w-4 mr-2" />
                     Sign Out
                   </DropdownMenuItem>
                 </DropdownMenuContent>
               </DropdownMenu>
-            </div>
+            </>
           ) : (
             <>
               <Link to="/signin">
@@ -161,7 +167,14 @@ export function Header() {
                 <>
                   <Link to="/dashboard" onClick={() => setIsMenuOpen(false)}>
                     <Button variant="ghost" size="sm" className="w-full">
+                      <BookOpen className="h-4 w-4 mr-2" />
                       Dashboard
+                    </Button>
+                  </Link>
+                  <Link to="/profile" onClick={() => setIsMenuOpen(false)}>
+                    <Button variant="ghost" size="sm" className="w-full">
+                      <User className="h-4 w-4 mr-2" />
+                      Profile
                     </Button>
                   </Link>
                   <Button 
