@@ -45,14 +45,13 @@ const Index = () => {
             </p>
             
             <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
-              <Button size="lg" className="bg-white text-primary hover:bg-white/90 transition-colors shadow-lg">
-                <Play className="mr-2 h-5 w-5" />
-                Start Learning Free
+              <Button size="lg" className="bg-white text-primary hover:bg-white/90 transition-colors shadow-lg" asChild>
+                <a href="/dashboard">
+                  <Play className="mr-2 h-5 w-5" />
+                  Start Learning Free
+                </a>
               </Button>
-              <Button size="lg" variant="outline" className="border-white/20 text-white hover:bg-white/10">
-                Watch Demo
-                <ArrowRight className="ml-2 h-5 w-5" />
-              </Button>
+              
             </div>
             
             <div className="flex items-center justify-center space-x-8 text-white/60 text-sm">
@@ -204,9 +203,11 @@ const Index = () => {
               <span>•</span>
               <span>50+ interactive modules</span>
             </div>
-            <Button size="lg" className="bg-hero-gradient hover:opacity-90 transition-opacity shadow-lg">
-              <Play className="mr-2 h-5 w-5" />
-              Start Your Journey Today
+            <Button size="lg" className="bg-hero-gradient hover:opacity-90 transition-opacity shadow-lg" asChild>
+              <a href="/dashboard">
+                <Play className="mr-2 h-5 w-5" />
+                Start Your Journey Today
+              </a>
             </Button>
           </div>
         </div>
