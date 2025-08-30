@@ -31,7 +31,8 @@ import NetworkSecurityScanner from "@/components/networking/NetworkSecurityScann
 import PerformanceMonitor from "@/components/networking/PerformanceMonitor";
 import LearningAnalytics from "@/components/networking/LearningAnalytics";
 
-const networkingTopics = [
+// Check for duplicates in the array
+const allTopics = [
   {
     id: "tcp-handshake",
     title: "TCP 3-Way Handshake",
@@ -39,7 +40,8 @@ const networkingTopics = [
     duration: "30 min",
     difficulty: "Beginner",
     icon: <Wifi className="h-5 w-5" />,
-    component: TCPHandshake
+    component: TCPHandshake,
+    category: "protocols"
   },
   {
     id: "dns-resolution",
@@ -48,7 +50,8 @@ const networkingTopics = [
     duration: "40 min",
     difficulty: "Intermediate",
     icon: <Globe className="h-5 w-5" />,
-    component: DNSResolution
+    component: DNSResolution,
+    category: "protocols"
   },
   {
     id: "osi-model",
@@ -57,7 +60,8 @@ const networkingTopics = [
     duration: "50 min",
     difficulty: "Intermediate",
     icon: <Layers3 className="h-5 w-5" />,
-    component: OSIModel
+    component: OSIModel,
+    category: "protocols"
   },
   {
     id: "subnet-calculator",
@@ -66,16 +70,18 @@ const networkingTopics = [
     duration: "45 min",
     difficulty: "Advanced",
     icon: <Calculator className="h-5 w-5" />,
-    component: SubnetCalculator
+    component: SubnetCalculator,
+    category: "tools"
   },
   {
     id: "network-topology",
     title: "Network Topology Builder",
-    description: "Drag-and-drop network design and simulation",
+    description: "Build and simulate network architectures",
     duration: "60 min",
     difficulty: "Advanced",
     icon: <Server className="h-5 w-5" />,
-    component: NetworkTopology
+    component: NetworkTopology,
+    category: "tools"
   },
   {
     id: "protocol-analyzer",
@@ -84,7 +90,8 @@ const networkingTopics = [
     duration: "35 min",
     difficulty: "Intermediate",
     icon: <Activity className="h-5 w-5" />,
-    component: ProtocolAnalyzer
+    component: ProtocolAnalyzer,
+    category: "analysis"
   },
   {
     id: "security-scanner",
@@ -93,7 +100,8 @@ const networkingTopics = [
     duration: "50 min",
     difficulty: "Advanced",
     icon: <Shield className="h-5 w-5" />,
-    component: NetworkSecurityScanner
+    component: NetworkSecurityScanner,
+    category: "security"
   },
   {
     id: "performance-monitor",
@@ -102,10 +110,15 @@ const networkingTopics = [
     duration: "40 min",
     difficulty: "Intermediate",
     icon: <Activity className="h-5 w-5" />,
-    component: PerformanceMonitor
-  },
-
+    component: PerformanceMonitor,
+    category: "monitoring"
+  }
 ];
+
+// Remove any duplicates based on ID
+const networkingTopics = allTopics.filter((topic, index, self) => 
+  index === self.findIndex(t => t.id === topic.id)
+);
 
 const analyticsTools = [
   {
@@ -115,13 +128,18 @@ const analyticsTools = [
     duration: "25 min",
     difficulty: "Beginner",
     icon: <BookOpen className="h-5 w-5" />,
-    component: LearningAnalytics
+    component: LearningAnalytics,
+    category: "analytics"
   }
 ];
 
 export default function Networking() {
   const [selectedTopic, setSelectedTopic] = useState<string | null>(null);
-  const [activeTab, setActiveTab] = useState("overview");
+  const [activeTab, setActiveTab] = useState("all");
+
+  // Get filtered topics for each category
+  const protocolTopics = networkingTopics.filter(topic => topic.category === "protocols");
+  const toolTopics = networkingTopics.filter(topic => ["tools", "analysis", "security", "monitoring"].includes(topic.category));
 
   const difficultyColors = {
     Beginner: "bg-green-100 text-green-800 border-green-200",
@@ -131,6 +149,8 @@ export default function Networking() {
 
   const selectedComponent = networkingTopics.find(topic => topic.id === selectedTopic)?.component || 
                            analyticsTools.find(topic => topic.id === selectedTopic)?.component;
+
+
 
   if (selectedTopic && selectedComponent) {
     const Component = selectedComponent;
@@ -148,10 +168,12 @@ export default function Networking() {
                 ← Back to Networking Overview
               </Button>
               <h1 className="text-3xl font-bold">
-                {networkingTopics.find(t => t.id === selectedTopic)?.title}
+                {networkingTopics.find(t => t.id === selectedTopic)?.title || 
+                 analyticsTools.find(t => t.id === selectedTopic)?.title}
               </h1>
               <p className="text-muted-foreground">
-                {networkingTopics.find(t => t.id === selectedTopic)?.description}
+                {networkingTopics.find(t => t.id === selectedTopic)?.description || 
+                 analyticsTools.find(t => t.id === selectedTopic)?.description}
               </p>
             </div>
           </div>
@@ -205,15 +227,14 @@ export default function Networking() {
       <section className="py-16">
         <div className="container mx-auto px-4">
           <Tabs value={activeTab} onValueChange={setActiveTab} className="max-w-6xl mx-auto">
-            <TabsList className="grid w-full grid-cols-5">
-              <TabsTrigger value="overview">Overview</TabsTrigger>
-              <TabsTrigger value="simulations">Simulations</TabsTrigger>
-              <TabsTrigger value="tools">Tools</TabsTrigger>
-              <TabsTrigger value="advanced">Advanced</TabsTrigger>
+            <TabsList className="grid w-full grid-cols-4">
+              <TabsTrigger value="all">All Topics</TabsTrigger>
+              <TabsTrigger value="protocols">Protocols</TabsTrigger>
+              <TabsTrigger value="tools">Tools & Analysis</TabsTrigger>
               <TabsTrigger value="analytics">Analytics</TabsTrigger>
             </TabsList>
             
-            <TabsContent value="overview" className="mt-8">
+            <TabsContent value="all" className="mt-8">
               <div className="grid gap-6">
                 <Card>
                   <CardHeader>
@@ -263,13 +284,80 @@ export default function Networking() {
                     </div>
                   </CardContent>
                 </Card>
+                
+                <Card>
+                  <CardHeader>
+                    <CardTitle className="flex items-center">
+                      <BookOpen className="mr-2 h-5 w-5" />
+                      Learning Categories
+                    </CardTitle>
+                    <CardDescription>
+                      Explore our networking modules organized by category
+                    </CardDescription>
+                  </CardHeader>
+                  <CardContent>
+                    <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                      <div className="p-4 border rounded-lg hover:shadow-md transition-shadow cursor-pointer" onClick={() => setActiveTab("protocols")}>
+                        <div className="flex items-center mb-2">
+                          <Wifi className="mr-2 h-5 w-5 text-blue-600" />
+                          <h4 className="font-semibold">Protocols</h4>
+                        </div>
+                        <p className="text-sm text-muted-foreground mb-2">
+                          TCP/IP, DNS, OSI Model
+                        </p>
+                        <Badge variant="outline" className="text-xs">
+                          {protocolTopics.length} modules
+                        </Badge>
+                      </div>
+                      
+                      <div className="p-4 border rounded-lg hover:shadow-md transition-shadow cursor-pointer" onClick={() => setActiveTab("tools")}>
+                        <div className="flex items-center mb-2">
+                          <Calculator className="mr-2 h-5 w-5 text-green-600" />
+                          <h4 className="font-semibold">Tools & Analysis</h4>
+                        </div>
+                        <p className="text-sm text-muted-foreground mb-2">
+                          Subnet Calculator, Topology Builder, Security Scanner
+                        </p>
+                        <Badge variant="outline" className="text-xs">
+                          {toolTopics.length} tools
+                        </Badge>
+                      </div>
+                      
+                      <div className="p-4 border rounded-lg hover:shadow-md transition-shadow cursor-pointer" onClick={() => setActiveTab("analytics")}>
+                        <div className="flex items-center mb-2">
+                          <BookOpen className="mr-2 h-5 w-5 text-purple-600" />
+                          <h4 className="font-semibold">Analytics</h4>
+                        </div>
+                        <p className="text-sm text-muted-foreground mb-2">
+                          Learning Progress & Performance Tracking
+                        </p>
+                        <Badge variant="outline" className="text-xs">
+                          {analyticsTools.length} tool
+                        </Badge>
+                      </div>
+                      
+                      <div className="p-4 border rounded-lg bg-primary/5 border-primary/20">
+                        <div className="flex items-center mb-2">
+                          <Award className="mr-2 h-5 w-5 text-primary" />
+                          <h4 className="font-semibold">Total Modules</h4>
+                        </div>
+                        <p className="text-sm text-muted-foreground mb-2">
+                          Complete networking curriculum
+                        </p>
+                        <Badge className="text-xs">
+                          {networkingTopics.length + analyticsTools.length} total
+                        </Badge>
+                      </div>
+                    </div>
+                  </CardContent>
+                </Card>
               </div>
             </TabsContent>
             
-            <TabsContent value="simulations" className="mt-8">
+            <TabsContent value="protocols" className="mt-8">
               <div className="grid gap-6">
-                {networkingTopics.slice(0, 3).map((topic, index) => (
-                  <Card key={topic.id} className="group hover:shadow-lg transition-all duration-300 hover:-translate-y-1">
+                {protocolTopics.map((topic, index) => (
+                  <Card key={`protocol-${topic.id}`} className="group hover:shadow-lg transition-all duration-300 hover:-translate-y-1">
                     <CardHeader className="pb-4">
                       <div className="flex items-start justify-between">
                         <div className="flex items-center space-x-3">
@@ -300,7 +388,7 @@ export default function Networking() {
                     <CardContent>
                       <div className="flex items-center justify-between">
                         <div className="text-sm text-muted-foreground">
-                          Module {index + 1} of {networkingTopics.length}
+                          Protocol Module {index + 1}
                         </div>
                         <Button 
                           className="bg-hero-gradient hover:opacity-90 transition-opacity"
@@ -319,8 +407,8 @@ export default function Networking() {
             
             <TabsContent value="tools" className="mt-8">
               <div className="grid gap-6">
-                {networkingTopics.slice(3, 5).map((topic, index) => (
-                  <Card key={topic.id} className="group hover:shadow-lg transition-all duration-300 hover:-translate-y-1">
+                {toolTopics.map((topic, index) => (
+                  <Card key={`tool-${topic.id}`} className="group hover:shadow-lg transition-all duration-300 hover:-translate-y-1">
                     <CardHeader className="pb-4">
                       <div className="flex items-start justify-between">
                         <div className="flex items-center space-x-3">
@@ -351,58 +439,7 @@ export default function Networking() {
                     <CardContent>
                       <div className="flex items-center justify-between">
                         <div className="text-sm text-muted-foreground">
-                          Tool {index + 1} of {networkingTopics.slice(3, 5).length}
-                        </div>
-                        <Button 
-                          className="bg-hero-gradient hover:opacity-90 transition-opacity"
-                          onClick={() => setSelectedTopic(topic.id)}
-                        >
-                          <Play className="mr-2 h-4 w-4" />
-                          Launch Tool
-                          <ArrowRight className="ml-2 h-4 w-4" />
-                        </Button>
-                      </div>
-                    </CardContent>
-                  </Card>
-                ))}
-              </div>
-            </TabsContent>
-            
-            <TabsContent value="advanced" className="mt-8">
-              <div className="grid gap-6">
-                {networkingTopics.slice(5, 8).map((topic, index) => (
-                  <Card key={topic.id} className="group hover:shadow-lg transition-all duration-300 hover:-translate-y-1">
-                    <CardHeader className="pb-4">
-                      <div className="flex items-start justify-between">
-                        <div className="flex items-center space-x-3">
-                          <div className="w-10 h-10 rounded-lg bg-primary/10 flex items-center justify-center text-primary group-hover:bg-primary group-hover:text-primary-foreground transition-colors">
-                            {topic.icon}
-                          </div>
-                          <div>
-                            <CardTitle className="text-lg font-semibold">
-                              {topic.title}
-                            </CardTitle>
-                            <CardDescription className="text-muted-foreground">
-                              {topic.description}
-                            </CardDescription>
-                          </div>
-                        </div>
-                        <div className="flex items-center space-x-2">
-                          <Badge variant="outline" className={difficultyColors[topic.difficulty as keyof typeof difficultyColors]}>
-                            {topic.difficulty}
-                          </Badge>
-                          <Badge variant="outline" className="text-muted-foreground">
-                            <Clock className="mr-1 h-3 w-3" />
-                            {topic.duration}
-                          </Badge>
-                        </div>
-                      </div>
-                    </CardHeader>
-                    
-                    <CardContent>
-                      <div className="flex items-center justify-between">
-                        <div className="text-sm text-muted-foreground">
-                          Advanced Tool {index + 1} of {networkingTopics.slice(5, 8).length}
+                          Tool {index + 1}
                         </div>
                         <Button 
                           className="bg-hero-gradient hover:opacity-90 transition-opacity"
@@ -422,7 +459,7 @@ export default function Networking() {
             <TabsContent value="analytics" className="mt-8">
               <div className="grid gap-6">
                 {analyticsTools.map((topic, index) => (
-                  <Card key={topic.id} className="group hover:shadow-lg transition-all duration-300 hover:-translate-y-1">
+                  <Card key={`analytics-${topic.id}`} className="group hover:shadow-lg transition-all duration-300 hover:-translate-y-1">
                     <CardHeader className="pb-4">
                       <div className="flex items-start justify-between">
                         <div className="flex items-center space-x-3">
