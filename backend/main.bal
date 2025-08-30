@@ -1,22 +1,23 @@
 import ballerina/http;
 import backend.database as database;
+import backend.networking as networking;
 import ballerina/time;
 import ballerinax/mongodb;
 import ballerina/log;
 
-const string JWT_ISSUER = "ballerina-backend";
-const string JWT_AUDIENCE = "ballerina-frontend";
-const string JWT_SECRET = "supersecretkey";
+// Configuration constants (inline for now)
+const int SERVER_PORT = 3001;
+const string MONGODB_CONNECTION_STRING = "mongodb+srv://mohamedashrif325:rqpBqU7bpqO72qkO@cluster0.3591lxr.mongodb.net/";
 
-listener http:Listener httpListener = new (3001);
+listener http:Listener httpListener = new (SERVER_PORT);
 
 // MongoDB client for local database
-mongodb:ConnectionConfig config = {
-    connection: "mongodb+srv://mohamedashrif325:rqpBqU7bpqO72qkO@cluster0.3591lxr.mongodb.net/"
+mongodb:ConnectionConfig mongoConfig = {
+    connection: MONGODB_CONNECTION_STRING
 };
 
 function initMongoClient() returns mongodb:Client {
-    mongodb:Client|error clientResult = new (config);
+    mongodb:Client|error clientResult = new (mongoConfig);
     if (clientResult is error) {
         panic clientResult;
     }
@@ -77,6 +78,7 @@ function createIndexes() {
 // Call createIndexes inside a function or at module level, not in the global scope
 function init() {
     createIndexes();
+    networking:createNetworkingIndexes(mongoClient);
 }
 
 service /api on httpListener {
@@ -118,7 +120,7 @@ service /api on httpListener {
         }
         
         log:printInfo("Successfully inserted test document");
-        return createResponse(200, "Backend is working! MongoDB connected and document created successfully", ());
+        return createResponse(200, "Backend is working! MongoDB connected and document created successfully", null);
     }
 
     resource function post auth/signup(http:Request req) returns http:Response|error {
@@ -211,7 +213,8 @@ service /api on httpListener {
             return createResponse(500, "Failed to create user", insertResult.message());
         }
         
-        return createResponse(201, "{\"token\": \"dummy-token-123\", \"user\": {\"id\": \"" + userDoc.id + "\", \"email\": \"" + email + "\", \"name\": \"" + name + "\", \"createdAt\": \"" + userDoc.timestamp + "\", \"updatedAt\": \"" + userDoc.timestamp + "\"}}", ());
+        string userResponse = "{\"token\": \"dummy-token-123\", \"user\": {\"id\": \"" + userDoc.id + "\", \"email\": \"" + email + "\", \"name\": \"" + name + "\", \"createdAt\": \"" + userDoc.timestamp + "\", \"updatedAt\": \"" + userDoc.timestamp + "\"}}";
+        return createResponse(201, userResponse, null);
     }
 
     // Fix: Change signin to login to match frontend expectations
@@ -270,7 +273,8 @@ service /api on httpListener {
         userMap["password"] = ();
         sessionStore[token] = userMap;
         string userJson = userMap.toString();
-        return createResponse(200, "{\"token\": \"" + token + "\", \"user\": " + userJson + "}", ());
+        string loginResponse = "{\"token\": \"" + token + "\", \"user\": " + userJson + "}";
+        return createResponse(200, loginResponse, null);
     }
 
     // Add missing auth/me endpoint
@@ -280,7 +284,7 @@ service /api on httpListener {
             string token = authHeader.substring(7, authHeader.length());
             map<anydata>? userMapOpt = sessionStore[token];
             if userMapOpt is map<anydata> {
-                return createResponse(200, userMapOpt.toString(), ());
+                return createResponse(200, userMapOpt.toString(), null);
             } else {
                 return createResponse(401, "Invalid token", "Session not found");
             }
@@ -290,14 +294,65 @@ service /api on httpListener {
     }
 
     // Progress tracking endpoints
-        // Progress tracking endpoints are now handled in the database module
-        resource function post user_progress_mark_completed(http:Request req) returns http:Response|error {
+    // Progress tracking endpoints are now handled in the database module
+    
+    resource function post user_progress_mark_completed(http:Request req) returns http:Response|error {
         return database:user_progress_mark_completed(req, sessionStore, mongoClient);
-        }
+    }
 
-        resource function get user/progress(http:Request req) returns http:Response|error {
+    resource function get user/progress(http:Request req) returns http:Response|error {
         return database:get_user_progress(req, sessionStore, mongoClient);
-        }
+    }
+
+    // Networking endpoints - now handled by the networking module
+    resource function post networking/tcp/handshake(http:Request req) returns http:Response|error {
+        return networking:save_tcp_handshake(req, sessionStore, mongoClient);
+    }
+
+    resource function post networking/dns/resolution(http:Request req) returns http:Response|error {
+        return networking:save_dns_resolution(req, sessionStore, mongoClient);
+    }
+
+    resource function post networking/subnet/calculate(http:Request req) returns http:Response|error {
+        return networking:save_subnet_calculation(req, sessionStore, mongoClient);
+    }
+
+    resource function post networking/topology/save(http:Request req) returns http:Response|error {
+        return networking:save_network_topology(req, sessionStore, mongoClient);
+    }
+
+    resource function get networking/topology/list(http:Request req) returns http:Response|error {
+        return networking:get_network_topologies(req, sessionStore, mongoClient);
+    }
+
+    resource function get networking/topology/types() returns http:Response|error {
+        return networking:get_topology_types();
+    }
+
+    resource function post networking/topology/simulate(http:Request req) returns http:Response|error {
+        return networking:simulate_topology(req, sessionStore, mongoClient);
+    }
+
+    // Temporarily commented out due to compilation issues
+    // resource function post networking/topology/failure-test(http:Request req) returns http:Response|error {
+    //     return networking:test_topology_failure(req, sessionStore, mongoClient);
+    // }
+
+    resource function post networking/progress/update(http:Request req) returns http:Response|error {
+        return networking:update_learning_progress(req, sessionStore, mongoClient);
+    }
+
+    resource function get networking/progress/user(http:Request req) returns http:Response|error {
+        return networking:get_learning_progress(req, sessionStore, mongoClient);
+    }
+
+    resource function get networking/status() returns http:Response|error {
+        return networking:get_networking_status();
+    }
+
+    resource function get networking/modules() returns http:Response|error {
+        return networking:get_networking_modules();
+    }
 
     // Global OPTIONS handler for CORS preflight requests
     resource function options .() returns http:Response {

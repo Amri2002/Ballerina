@@ -317,24 +317,6 @@ export default function DNSResolution() {
 
   return (
     <div className="space-y-6">
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h2 className="text-2xl font-bold">DNS Resolution Process</h2>
-          <p className="text-muted-foreground">
-            Visualize how domain names are resolved to IP addresses
-          </p>
-        </div>
-        <div className="flex items-center space-x-2">
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => setShowCache(!showCache)}
-          >
-            {showCache ? 'Hide' : 'Show'} Cache
-          </Button>
-        </div>
-      </div>
 
       {/* Domain Input */}
       <Card>

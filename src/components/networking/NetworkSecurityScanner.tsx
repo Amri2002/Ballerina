@@ -9,6 +9,7 @@ import { Progress } from '@/components/ui/progress';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Shield, Target, AlertTriangle, CheckCircle, Clock, Activity } from 'lucide-react';
+import { useAuth } from '@/contexts/AuthContext';
 
 interface Vulnerability {
   severity: 'low' | 'medium' | 'high' | 'critical';
@@ -34,6 +35,7 @@ interface SecurityScan {
 }
 
 const NetworkSecurityScanner: React.FC = () => {
+  const { user } = useAuth();
   const [targetHost, setTargetHost] = useState('');
   const [scanType, setScanType] = useState('quick');
   const [isScanning, setIsScanning] = useState(false);
@@ -99,13 +101,13 @@ const NetworkSecurityScanner: React.FC = () => {
     setScanProgress(0);
 
     try {
-      const response = await fetch('http://localhost:3001/api/networking/security/scan', {
+              const response = await fetch(`${import.meta.env.VITE_API_BASE_URL || 'http://localhost:3002/api'}/networking/security/scan`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          userId: 'demo-user',
+          userId: user?.id || 'demo-user',
           targetHost: targetHost,
           scanType: scanType
         }),
@@ -131,7 +133,7 @@ const NetworkSecurityScanner: React.FC = () => {
         // Create mock scan result
         const mockScan: SecurityScan = {
           id: `scan_${Date.now()}`,
-          userId: 'demo-user',
+          userId: user?.id || 'demo-user',
           targetHost: targetHost,
           scanType: scanType,
           status: 'completed',
@@ -200,10 +202,6 @@ const NetworkSecurityScanner: React.FC = () => {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center space-x-2">
-        <Shield className="h-6 w-6 text-red-600" />
-        <h1 className="text-2xl font-bold">Network Security Scanner</h1>
-      </div>
 
       <Card>
         <CardHeader>

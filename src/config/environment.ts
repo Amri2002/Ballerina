@@ -1,6 +1,6 @@
 // Environment configuration
 export const config = {
-  // API Configuration - Use backend directly since CORS is now fixed
+  // API Configuration - Now using consolidated backend on port 3001
   apiBaseUrl: import.meta.env.VITE_API_BASE_URL || 'http://localhost:3001/api',
   
   // App Configuration

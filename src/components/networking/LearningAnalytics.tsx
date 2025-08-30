@@ -6,6 +6,7 @@ import { Progress } from '@/components/ui/progress';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Trophy, Target, TrendingUp, Clock, Award, BookOpen, CheckCircle, Star } from 'lucide-react';
+import { useAuth } from '@/contexts/AuthContext';
 
 interface ModuleProgress {
   completed: number;
@@ -44,6 +45,7 @@ interface Achievement {
 }
 
 const LearningAnalytics: React.FC = () => {
+  const { user } = useAuth();
   const [analytics, setAnalytics] = useState<LearningAnalytics | null>(null);
   const [isLoading, setIsLoading] = useState(true);
   const [selectedTimeRange, setSelectedTimeRange] = useState('7d');
@@ -104,7 +106,7 @@ const LearningAnalytics: React.FC = () => {
   ];
 
   const mockAnalytics: LearningAnalytics = {
-    userId: 'demo-user',
+    userId: user?.id || 'demo-user',
     timestamp: new Date().toISOString(),
     modules: {
       tcpHandshake: {
@@ -161,7 +163,7 @@ const LearningAnalytics: React.FC = () => {
     const fetchAnalytics = async () => {
       setIsLoading(true);
       try {
-        const response = await fetch(`http://localhost:3001/api/networking/analytics/user/demo-user`);
+        const response = await fetch(`${import.meta.env.VITE_API_BASE_URL || 'http://localhost:3002/api'}/networking/analytics/user?userId=${user?.id || 'demo-user'}`);
         if (response.ok) {
           const data = await response.json();
           setAnalytics(data);
@@ -178,7 +180,7 @@ const LearningAnalytics: React.FC = () => {
     };
 
     fetchAnalytics();
-  }, []);
+  }, [user?.id]);
 
   const getRarityColor = (rarity: string) => {
     const colors: { [key: string]: string } = {
@@ -251,10 +253,6 @@ const LearningAnalytics: React.FC = () => {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center space-x-2">
-        <TrendingUp className="h-6 w-6 text-purple-600" />
-        <h1 className="text-2xl font-bold">Learning Analytics</h1>
-      </div>
 
       {/* Overview Cards */}
       <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">

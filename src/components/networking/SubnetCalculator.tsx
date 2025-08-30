@@ -223,25 +223,6 @@ export default function SubnetCalculator() {
 
   return (
     <div className="space-y-6">
-      {/* Header */}
-      <div className="flex items-center justify-between">
-        <div>
-          <h2 className="text-2xl font-bold">Subnet Calculator</h2>
-          <p className="text-muted-foreground">
-            Calculate subnet information, practice CIDR notation, and visualize IP addressing
-          </p>
-        </div>
-        <div className="flex items-center space-x-2">
-          <Button
-            variant="outline"
-            size="sm"
-            onClick={() => setShowBinary(!showBinary)}
-          >
-            {showBinary ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
-            {showBinary ? 'Hide' : 'Show'} Binary
-          </Button>
-        </div>
-      </div>
 
       <Tabs defaultValue="calculator" className="w-full">
         <TabsList className="grid w-full grid-cols-3">

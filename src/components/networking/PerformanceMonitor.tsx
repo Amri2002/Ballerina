@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useRef } from 'react';
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card';
 import { Button } from '@/components/ui/button';
 import { Input } from '@/components/ui/input';
@@ -9,6 +9,7 @@ import { Progress } from '@/components/ui/progress';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Activity, TrendingUp, TrendingDown, AlertTriangle, Clock, Wifi, Server, CheckCircle } from 'lucide-react';
+import { useAuth } from '@/contexts/AuthContext';
 
 interface NetworkMetrics {
   bandwidth: number;
@@ -33,13 +34,14 @@ interface PerformanceData {
 }
 
 const PerformanceMonitor: React.FC = () => {
+  const { user } = useAuth();
   const [networkId, setNetworkId] = useState('');
   const [isMonitoring, setIsMonitoring] = useState(false);
   const [currentMetrics, setCurrentMetrics] = useState<NetworkMetrics | null>(null);
   const [metricsHistory, setMetricsHistory] = useState<NetworkMetrics[]>([]);
-  const [performanceData, setPerformanceData] = useState<PerformanceData | null>(null);
   const [monitoringInterval, setMonitoringInterval] = useState<NodeJS.Timeout | null>(null);
   const [selectedTimeRange, setSelectedTimeRange] = useState('1h');
+  const [alerts, setAlerts] = useState<string[]>([]);
 
   const timeRanges = [
     { value: '5m', label: 'Last 5 minutes' },
@@ -75,25 +77,39 @@ const PerformanceMonitor: React.FC = () => {
     }
 
     setIsMonitoring(true);
-    const initialMetrics = generateMockMetrics();
-    setCurrentMetrics(initialMetrics);
-    setMetricsHistory([initialMetrics]);
+    setMetricsHistory([]);
+    setAlerts([]);
 
     // Start real-time monitoring
     const interval = setInterval(async () => {
-      const newMetrics = generateMockMetrics();
+      const newMetrics: NetworkMetrics = {
+        timestamp: new Date().toISOString(),
+        latency: Math.random() * 200 + 10,
+        bandwidth: Math.random() * 1000 + 100,
+        packetLoss: Math.random() * 5,
+        cpuUsage: Math.random() * 100,
+        memoryUsage: Math.random() * 100,
+        activeConnections: Math.floor(Math.random() * 1000) + 100,
+        throughput: Math.random() * 1000 + 100
+      };
+
       setCurrentMetrics(newMetrics);
-      setMetricsHistory(prev => [...prev.slice(-50), newMetrics]); // Keep last 50 readings
+      setMetricsHistory(prev => [...prev.slice(-59), newMetrics]); // Keep last 60 data points
+
+      const newAlerts = getAlerts(newMetrics);
+      if (newAlerts.length > 0) {
+        setAlerts(prev => [...newAlerts, ...prev.slice(0, 4)]); // Keep last 5 alerts
+      }
 
       // Send to backend
       try {
-        await fetch('http://localhost:3001/api/networking/performance/monitor', {
+        await fetch(`${import.meta.env.VITE_API_BASE_URL || 'http://localhost:3002/api'}/networking/performance/monitor`, {
           method: 'POST',
           headers: {
             'Content-Type': 'application/json',
           },
           body: JSON.stringify({
-            userId: 'demo-user',
+            userId: user?.id || 'demo-user',
             networkId: networkId,
             metrics: newMetrics
           }),
@@ -170,10 +186,6 @@ const PerformanceMonitor: React.FC = () => {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center space-x-2">
-        <Activity className="h-6 w-6 text-green-600" />
-        <h1 className="text-2xl font-bold">Performance Monitor</h1>
-      </div>
 
       <Card>
         <CardHeader>

@@ -1,12 +1,13 @@
 import React, { useState, useEffect } from 'react';
 import { Button } from "@/components/ui/button";
-import { Card, CardContent, CardHeader, CardTitle } from "@/components/ui/card";
+import { Card, CardContent, CardHeader, CardTitle, CardDescription } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
 import { Alert, AlertDescription } from "@/components/ui/alert";
 import { Play, Pause, RotateCcw, ArrowRight, CheckCircle, Clock, Activity, TrendingUp, AlertTriangle } from "lucide-react";
 import { networkingApi } from '@/services/networking-api';
+import { useAuth } from '@/contexts/AuthContext';
 
 interface Packet {
   id: string;
@@ -44,16 +45,22 @@ interface PerformanceMetrics {
 }
 
 export default function TCPHandshake() {
+  const { user } = useAuth();
   const [currentStep, setCurrentStep] = useState(0);
   const [isPlaying, setIsPlaying] = useState(false);
   const [progress, setProgress] = useState(0);
   const [packets, setPackets] = useState<Packet[]>([]);
   const [showDetails, setShowDetails] = useState(false);
-  const [userId, setUserId] = useState("demo-user");
+  const [userId, setUserId] = useState(user?.id || "demo-user");
   const [currentState, setCurrentState] = useState<string>('closed');
   const [performanceMetrics, setPerformanceMetrics] = useState<PerformanceMetrics | null>(null);
   const [errorScenarios, setErrorScenarios] = useState<string[]>([]);
   const [showStateMachine, setShowStateMachine] = useState(false);
+
+  // Update userId when user changes
+  useEffect(() => {
+    setUserId(user?.id || "demo-user");
+  }, [user]);
 
   const handshakeSteps: HandshakeStep[] = [
     {
@@ -398,23 +405,6 @@ export default function TCPHandshake() {
 
   return (
     <div className="container mx-auto p-6 space-y-6">
-      <div className="flex justify-between items-center">
-        <h1 className="text-3xl font-bold text-gray-900">TCP Three-Way Handshake</h1>
-        <div className="flex gap-2">
-          <Button 
-            variant="outline" 
-            onClick={() => setShowStateMachine(!showStateMachine)}
-          >
-            {showStateMachine ? 'Hide' : 'Show'} State Machine
-          </Button>
-          <Button 
-            variant="outline" 
-            onClick={() => setShowDetails(!showDetails)}
-          >
-            {showDetails ? 'Hide' : 'Show'} Details
-          </Button>
-        </div>
-      </div>
 
       <Tabs defaultValue="simulation" className="w-full">
         <TabsList className="grid w-full grid-cols-4">

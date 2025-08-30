@@ -9,6 +9,7 @@ import { Progress } from '@/components/ui/progress';
 import { Tabs, TabsContent, TabsList, TabsTrigger } from '@/components/ui/tabs';
 import { Alert, AlertDescription } from '@/components/ui/alert';
 import { Network, Shield, Activity, Eye } from 'lucide-react';
+import { useAuth } from '@/contexts/AuthContext';
 
 interface PacketData {
   sourcePort: number;
@@ -31,6 +32,7 @@ interface ProtocolAnalysis {
 }
 
 const ProtocolAnalyzer: React.FC = () => {
+  const { user } = useAuth();
   const [packetData, setPacketData] = useState('');
   const [protocolType, setProtocolType] = useState('TCP');
   const [isAnalyzing, setIsAnalyzing] = useState(false);
@@ -70,15 +72,16 @@ const ProtocolAnalyzer: React.FC = () => {
     setIsAnalyzing(true);
     setShowAnimation(true);
     setCurrentStep(0);
+    setAnalysis(null);
 
     try {
-      const response = await fetch('http://localhost:3001/api/networking/protocol/analyze', {
+      const response = await fetch(`${import.meta.env.VITE_API_BASE_URL || 'http://localhost:3002/api'}/networking/protocol/analyze`, {
         method: 'POST',
         headers: {
           'Content-Type': 'application/json',
         },
         body: JSON.stringify({
-          userId: 'demo-user',
+          userId: user?.id || 'demo-user',
           packetData: packetData,
           protocolType: protocolType
         }),
@@ -104,7 +107,7 @@ const ProtocolAnalyzer: React.FC = () => {
         // Create mock analysis result
         const mockAnalysis: ProtocolAnalysis = {
           id: `analysis_${Date.now()}`,
-          userId: 'demo-user',
+          userId: user?.id || 'demo-user',
           packetData: packetData,
           protocolType: protocolType,
           analysis: 'Protocol analysis completed successfully',
@@ -159,10 +162,6 @@ const ProtocolAnalyzer: React.FC = () => {
 
   return (
     <div className="space-y-6">
-      <div className="flex items-center space-x-2">
-        <Network className="h-6 w-6 text-blue-600" />
-        <h1 className="text-2xl font-bold">Protocol Analyzer</h1>
-      </div>
 
       <Card>
         <CardHeader>
