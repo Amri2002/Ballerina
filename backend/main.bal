@@ -294,15 +294,15 @@ service /api on httpListener {
     }
 
     // Progress tracking endpoints
-        // Progress tracking endpoints are now handled in the database module
-        // Temporarily commented out due to compilation issues in database module
-        // resource function post user_progress_mark_completed(http:Request req) returns http:Response|error {
-        // return database:user_progress_mark_completed(req, sessionStore, mongoClient);
-        // }
+    // Progress tracking endpoints are now handled in the database module
+    
+    resource function post user_progress_mark_completed(http:Request req) returns http:Response|error {
+        return database:user_progress_mark_completed(req, sessionStore, mongoClient);
+    }
 
-        // resource function get user/progress(http:Request req) returns http:Response|error {
-        // return database:get_user_progress(req, sessionStore, mongoClient);
-        // }
+    resource function get user/progress(http:Request req) returns http:Response|error {
+        return database:get_user_progress(req, sessionStore, mongoClient);
+    }
 
     // Networking endpoints - now handled by the networking module
     resource function post networking/tcp/handshake(http:Request req) returns http:Response|error {
@@ -333,9 +333,10 @@ service /api on httpListener {
         return networking:simulate_topology(req, sessionStore, mongoClient);
     }
 
-    resource function post networking/topology/failure-test(http:Request req) returns http:Response|error {
-        return networking:test_topology_failure(req, sessionStore, mongoClient);
-    }
+    // Temporarily commented out due to compilation issues
+    // resource function post networking/topology/failure-test(http:Request req) returns http:Response|error {
+    //     return networking:test_topology_failure(req, sessionStore, mongoClient);
+    // }
 
     resource function post networking/progress/update(http:Request req) returns http:Response|error {
         return networking:update_learning_progress(req, sessionStore, mongoClient);
