@@ -34,14 +34,14 @@ const resources: Resource[] = [
     id: "art1",
     title: "Understanding ACID Properties",
     description: "A deep dive article into ACID properties in databases.",
-    url: "https://yourteam.com/articles/acid-properties",
+    url: "https://www.geeksforgeeks.org/dbms/acid-properties-in-dbms/",
     category: "article",
   },
   {
     id: "art2",
     title: "Entity Relationship Diagrams Explained",
     description: "Team-written guide to ER diagrams.",
-    url: "https://yourteam.com/articles/er-diagrams",
+    url: "https://www.geeksforgeeks.org/dbms/introduction-of-er-model/",
     category: "article",
   },
   // Networking resources
@@ -49,14 +49,14 @@ const resources: Resource[] = [
     id: "net1",
     title: "OSI Model Explained (YouTube)",
     description: "A video guide to the OSI networking model.",
-    url: "https://www.youtube.com/embed/5cEbZV6b6bA",
+    url: "https://www.youtube.com/embed/vv4y_uOneC0?si=KDnCKeop9exvB8vf",
     category: "video",
   },
   {
     id: "net2",
     title: "Subnetting Made Simple",
     description: "Team article on subnetting concepts and practice.",
-    url: "https://yourteam.com/articles/subnetting",
+    url: "https://www.geeksforgeeks.org/computer-networks/introduction-to-subnetting/",
     category: "article",
   },
   // DSA resources
@@ -71,7 +71,7 @@ const resources: Resource[] = [
     id: "dsa2",
     title: "Mastering Algorithms",
     description: "Team-written article on essential algorithms.",
-    url: "https://yourteam.com/articles/algorithms",
+    url: "https://www.geeksforgeeks.org/dsa/introduction-to-algorithms/",
     category: "article",
   },
 ];
