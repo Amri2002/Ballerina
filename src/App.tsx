@@ -5,6 +5,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { AuthProvider, useAuth } from "./contexts/AuthContext";
 import Index from "./pages/Index";
+import Forum from "./pages/Forum";
 import DSA from "./pages/DSA";
 import Networking from "./pages/Networking";
 import Databases from "./pages/Databases";
@@ -38,9 +39,21 @@ const App = () => (
         <BrowserRouter>
           <Routes>
             <Route path="/" element={<Index />} />
-            <Route path="/dsa" element={<DSA />} />
-            <Route path="/networking" element={<Networking />} />
-            <Route path="/databases" element={<Databases />} />
+            <Route path="/dsa" element={
+              <ProtectedRoute>
+                <DSA />
+              </ProtectedRoute>
+            } />
+            <Route path="/networking" element={
+              <ProtectedRoute>
+                <Networking />
+              </ProtectedRoute>
+            } />
+            <Route path="/databases" element={
+              <ProtectedRoute>
+                <Databases />
+              </ProtectedRoute>
+            } />
             <Route path="/about" element={<About />} />
             <Route path="/signin" element={
               <PublicRoute>
@@ -62,6 +75,7 @@ const App = () => (
                 <Profile />
               </ProtectedRoute>
             } />
+            <Route path="/forum" element={<Forum />} />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />
           </Routes>

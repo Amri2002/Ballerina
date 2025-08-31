@@ -1,7 +1,9 @@
 import ballerina/http;
 import backend.database as database;
 import backend.networking as networking;
-import backend.dsa as dsa;
+
+import backend.forum as forum;
+
 import ballerina/time;
 import ballerinax/mongodb;
 import ballerina/log;
@@ -83,6 +85,26 @@ function init() {
 }
 
 service /api on httpListener {
+    // Forum endpoints
+    resource function delete forum/thread/[string id](http:Request req) returns http:Response|error {
+        return forum:delete_forum_thread(req, id, mongoClient);
+    }
+
+    resource function post forum/thread(http:Request req) returns http:Response|error {
+        return forum:post_forum_thread(req, mongoClient);
+    }
+
+    resource function get forum/threads(http:Request req) returns http:Response|error {
+        return forum:get_forum_threads(req, mongoClient);
+    }
+
+    resource function post forum/reply(http:Request req) returns http:Response|error {
+        return forum:post_forum_reply(req, mongoClient);
+    }
+
+    resource function get forum/thread/[string id](http:Request req) returns http:Response|error {
+        return forum:get_forum_thread_details(req, id, mongoClient);
+    }
 
     // Test endpoint to verify backend is working
     resource function get test() returns http:Response|error {
