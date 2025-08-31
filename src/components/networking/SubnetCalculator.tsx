@@ -6,7 +6,10 @@ import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from "@/components/ui/select";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { Calculator, Network, Globe, Binary, Eye, EyeOff, RefreshCw, Copy, Check } from "lucide-react";
+import { Calculator, Network, Globe, Binary, Eye, EyeOff, RefreshCw, Copy, Check, XCircle } from "lucide-react";
+import { useToast } from "@/hooks/use-toast";
+import { useAuth } from "@/contexts/AuthContext";
+import { networkingApi } from "@/services/networking-api";
 
 interface SubnetInfo {
   networkAddress: string;
@@ -32,6 +35,15 @@ interface SubnetExercise {
   answer: SubnetInfo;
   userAnswer?: SubnetInfo;
   completed: boolean;
+  isCorrect?: boolean;
+  showFeedback?: boolean;
+  userInputs?: {
+    networkAddress?: string;
+    broadcastAddress?: string;
+    firstHost?: string;
+    lastHost?: string;
+    totalHosts?: string;
+  };
 }
 
 export default function SubnetCalculator() {
@@ -44,6 +56,15 @@ export default function SubnetCalculator() {
   const [exercises, setExercises] = useState<SubnetExercise[]>([]);
   const [currentExercise, setCurrentExercise] = useState(0);
   const [copied, setCopied] = useState(false);
+
+  // MongoDB Integration
+  const [isLoading, setIsLoading] = useState(false);
+  const [backendConnected, setBackendConnected] = useState(false);
+  const [userProgress, setUserProgress] = useState<any>(null);
+  
+  // Hooks
+  const { toast } = useToast();
+  const { user, isAuthenticated } = useAuth();
 
   // Generate practice exercises
   useEffect(() => {
@@ -82,12 +103,129 @@ export default function SubnetCalculator() {
         ipAddress: data.ipAddress,
         subnetMask: data.subnetMask,
         answer: calculateSubnetInfo(data.ipAddress, data.subnetMask),
-        completed: false
+        userInputs: {
+          networkAddress: '',
+          broadcastAddress: '',
+          firstHost: '',
+          lastHost: '',
+          totalHosts: '',
+        },
+        completed: false,
+        isCorrect: undefined,
+        showFeedback: false,
       }));
     };
 
     setExercises(generateExercises());
+    loadUserProgress();
   }, []);
+
+  // Load user progress from backend
+  const loadUserProgress = async () => {
+    if (!isAuthenticated || !user) return;
+    
+    try {
+      setIsLoading(true);
+      const progress = await networkingApi.getUserProgress(user.id);
+      setUserProgress(progress);
+      setBackendConnected(true);
+      
+      // Update exercises with saved progress
+      if (progress && typeof progress === 'object' && 'subnetExercises' in progress) {
+        const subnetExercises = (progress as any).subnetExercises;
+        setExercises(prev => prev.map(exercise => {
+          const savedProgress = subnetExercises.find((p: any) => p.exerciseId === exercise.id);
+          if (savedProgress) {
+            return {
+              ...exercise,
+              completed: savedProgress.completed,
+              isCorrect: savedProgress.isCorrect,
+              userInputs: savedProgress.userInputs || exercise.userInputs,
+              showFeedback: savedProgress.completed
+            };
+          }
+          return exercise;
+        }));
+      }
+      
+      toast({
+        title: "Progress Loaded",
+        description: "Your subnet practice progress has been loaded from the backend.",
+      });
+    } catch (error) {
+      console.log("Could not load progress from backend:", error);
+      setBackendConnected(false);
+    } finally {
+      setIsLoading(false);
+    }
+  };
+
+  // Save subnet calculation to backend
+  const saveSubnetCalculation = async (subnetData: SubnetInfo) => {
+    if (!isAuthenticated || !user) return;
+    
+    try {
+      await networkingApi.calculateSubnet({
+        userId: user.id,
+        ipAddress: ipAddress,
+        subnetMask: subnetMask,
+        cidr: cidr
+      });
+      
+      toast({
+        title: "Calculation Saved",
+        description: "Subnet calculation has been saved to your progress.",
+      });
+    } catch (error) {
+      console.log("Could not save calculation to backend:", error);
+    }
+  };
+
+  // Save exercise completion to backend
+  const saveExerciseProgress = async (exerciseIndex: number, isCorrect: boolean) => {
+    if (!isAuthenticated || !user) return;
+    
+    const exercise = exercises[exerciseIndex];
+    try {
+      await networkingApi.updateProgress({
+        userId: user.id,
+        module: 'networking',
+        topic: 'subnet-calculator',
+        progress: Math.round(((exercises.filter(e => e.completed).length + 1) / exercises.length) * 100)
+      });
+      
+      // Save exercise result
+      const exerciseData = {
+        exerciseId: exercise.id,
+        completed: true,
+        isCorrect,
+        userInputs: exercise.userInputs,
+        correctAnswer: exercise.answer,
+        timestamp: new Date().toISOString()
+      };
+      
+      // Update local state
+      setUserProgress(prev => ({
+        ...prev,
+        subnetExercises: [...(prev?.subnetExercises || []), exerciseData]
+      }));
+      
+      toast({
+        title: isCorrect ? "Excellent!" : "Keep Learning",
+        description: isCorrect 
+          ? "Correct answer! Progress saved to backend."
+          : "Some answers were incorrect. Review and try again!",
+        variant: isCorrect ? "default" : "destructive"
+      });
+    } catch (error) {
+      console.log("Could not save exercise progress to backend:", error);
+      toast({
+        title: "Progress Not Saved",
+        description: "Could not save progress to backend, but your answer has been checked.",
+        variant: "destructive"
+      });
+    }
+  };
 
   const ipToBinary = (ip: string): string => {
     return ip.split('.').map(octet => 
@@ -214,15 +352,65 @@ export default function SubnetCalculator() {
     const exercise = exercises[exerciseIndex];
     const calculated = calculateSubnetInfo(exercise.ipAddress, exercise.subnetMask);
     
+    // Validate user inputs
+    const userInputs = exercise.userInputs || {};
+    const isCorrect = 
+      userInputs.networkAddress === calculated.networkAddress &&
+      userInputs.broadcastAddress === calculated.broadcastAddress &&
+      userInputs.firstHost === calculated.firstHost &&
+      userInputs.lastHost === calculated.lastHost &&
+      userInputs.totalHosts === calculated.totalHosts.toString();
+    
     setExercises(prev => prev.map((ex, index) => 
       index === exerciseIndex 
-        ? { ...ex, userAnswer: calculated, completed: true }
+        ? { 
+            ...ex, 
+            userAnswer: calculated, 
+            completed: true,
+            isCorrect,
+            showFeedback: true
+          }
+        : ex
+    ));
+    
+    // Save progress to backend
+    saveExerciseProgress(exerciseIndex, isCorrect);
+  };
+
+  const updateUserInput = (exerciseIndex: number, field: string, value: string) => {
+    setExercises(prev => prev.map((ex, index) => 
+      index === exerciseIndex 
+        ? { 
+            ...ex, 
+            userInputs: { ...ex.userInputs, [field]: value },
+            showFeedback: false,
+            completed: false
+          }
         : ex
     ));
   };
 
   return (
     <div className="space-y-6">
+      {/* Header */}
+      <div className="flex items-center justify-between">
+        {/* <div>
+          <h2 className="text-2xl font-bold">Subnet Calculator</h2>
+          <p className="text-muted-foreground">
+            Calculate subnet information, practice CIDR notation, and visualize IP addressing
+          </p>
+        </div>
+        <div className="flex items-center space-x-2">
+          <Button
+            variant="outline"
+            size="sm"
+            onClick={() => setShowBinary(!showBinary)}
+          >
+            {showBinary ? <EyeOff className="h-4 w-4" /> : <Eye className="h-4 w-4" />}
+            {showBinary ? 'Hide' : 'Show'} Binary
+          </Button>
+        </div> */}
+      </div>
 
       <Tabs defaultValue="calculator" className="w-full">
         <TabsList className="grid w-full grid-cols-3">
@@ -397,22 +585,67 @@ export default function SubnetCalculator() {
         <TabsContent value="exercises" className="space-y-6">
           <Card>
             <CardHeader>
-              <CardTitle>Practice Exercises</CardTitle>
+              <div className="flex items-center justify-between">
+                <div>
+                  <CardTitle>Practice Exercises</CardTitle>
+                  <p className="text-sm text-muted-foreground">
+                    Calculate the subnet information and submit your answers to check if they're correct.
+                  </p>
+                </div>
+                {isAuthenticated && (
+                  <div className="flex items-center space-x-2">
+                    <div className={`w-2 h-2 rounded-full ${backendConnected ? 'bg-green-500' : 'bg-gray-400'}`}></div>
+                    <span className="text-xs text-muted-foreground">
+                      {backendConnected ? 'Backend Connected' : 'Backend Offline'}
+                    </span>
+                  </div>
+                )}
+              </div>
             </CardHeader>
             <CardContent>
-              <div className="space-y-4">
+              <div className="space-y-6">
+                {/* Progress Summary */}
+                {isAuthenticated && (
+                  <div className="p-4 bg-blue-50 rounded-lg border border-blue-200">
+                    <div className="flex items-center justify-between mb-2">
+                      <h4 className="text-sm font-medium text-blue-800">Your Progress</h4>
+                      <span className="text-sm text-blue-600">
+                        {exercises.filter(e => e.completed).length} / {exercises.length} completed
+                      </span>
+                    </div>
+                    <div className="w-full bg-blue-200 rounded-full h-2">
+                      <div 
+                        className="bg-blue-600 h-2 rounded-full transition-all duration-300"
+                        style={{ 
+                          width: `${(exercises.filter(e => e.completed).length / exercises.length) * 100}%` 
+                        }}
+                      ></div>
+                    </div>
+                    <div className="mt-2 text-xs text-blue-600">
+                      {exercises.filter(e => e.completed && e.isCorrect).length} correct answers
+                    </div>
+                  </div>
+                )}
+                
                 {exercises.map((exercise, index) => (
                   <div key={exercise.id} className="border rounded-lg p-4">
                     <div className="flex items-center justify-between mb-3">
                       <h4 className="font-medium">Exercise {index + 1}</h4>
-                      <Badge variant={exercise.completed ? "default" : "secondary"}>
-                        {exercise.completed ? "Completed" : "Pending"}
+                      <Badge variant={
+                        exercise.completed 
+                          ? (exercise.isCorrect ? "default" : "destructive")
+                          : "secondary"
+                      }>
+                        {exercise.completed 
+                          ? (exercise.isCorrect ? "Correct!" : "Incorrect")
+                          : "Pending"
+                        }
                       </Badge>
                     </div>
                     
                     <p className="text-sm text-muted-foreground mb-3">{exercise.question}</p>
                     
-                    <div className="grid grid-cols-2 gap-4 text-sm">
+                    <div className="grid grid-cols-2 gap-4 text-sm mb-4">
                       <div>
                         <span className="font-medium">IP Address:</span>
                         <span className="font-mono ml-2">{exercise.ipAddress}</span>
@@ -423,27 +656,148 @@ export default function SubnetCalculator() {
                       </div>
                     </div>
                     
-                    {exercise.completed && exercise.userAnswer && (
-                      <div className="mt-3 p-3 bg-green-50 rounded-lg">
-                        <div className="text-sm font-medium text-green-800 mb-2">Your Answer:</div>
-                        <div className="grid grid-cols-2 gap-2 text-xs">
-                          <div>Network: {exercise.userAnswer.networkAddress}</div>
-                          <div>Broadcast: {exercise.userAnswer.broadcastAddress}</div>
-                          <div>First Host: {exercise.userAnswer.firstHost}</div>
-                          <div>Last Host: {exercise.userAnswer.lastHost}</div>
+                    {/* User Input Fields */}
+                    <div className="space-y-3 mb-4">
+                      <h5 className="text-sm font-medium">Enter your answers:</h5>
+                      <div className="grid grid-cols-1 md:grid-cols-2 gap-3">
+                        <div>
+                          <Label htmlFor={`network-${index}`} className="text-xs">Network Address</Label>
+                          <Input
+                            id={`network-${index}`}
+                            value={exercise.userInputs?.networkAddress || ''}
+                            onChange={(e) => updateUserInput(index, 'networkAddress', e.target.value)}
+                            placeholder="192.168.1.0"
+                            className="text-sm"
+                            disabled={exercise.completed}
+                          />
+                        </div>
+                        <div>
+                          <Label htmlFor={`broadcast-${index}`} className="text-xs">Broadcast Address</Label>
+                          <Input
+                            id={`broadcast-${index}`}
+                            value={exercise.userInputs?.broadcastAddress || ''}
+                            onChange={(e) => updateUserInput(index, 'broadcastAddress', e.target.value)}
+                            placeholder="192.168.1.255"
+                            className="text-sm"
+                            disabled={exercise.completed}
+                          />
+                        </div>
+                        <div>
+                          <Label htmlFor={`first-host-${index}`} className="text-xs">First Host</Label>
+                          <Input
+                            id={`first-host-${index}`}
+                            value={exercise.userInputs?.firstHost || ''}
+                            onChange={(e) => updateUserInput(index, 'firstHost', e.target.value)}
+                            placeholder="192.168.1.1"
+                            className="text-sm"
+                            disabled={exercise.completed}
+                          />
+                        </div>
+                        <div>
+                          <Label htmlFor={`last-host-${index}`} className="text-xs">Last Host</Label>
+                          <Input
+                            id={`last-host-${index}`}
+                            value={exercise.userInputs?.lastHost || ''}
+                            onChange={(e) => updateUserInput(index, 'lastHost', e.target.value)}
+                            placeholder="192.168.1.254"
+                            className="text-sm"
+                            disabled={exercise.completed}
+                          />
+                        </div>
+                        <div>
+                          <Label htmlFor={`total-hosts-${index}`} className="text-xs">Total Hosts</Label>
+                          <Input
+                            id={`total-hosts-${index}`}
+                            value={exercise.userInputs?.totalHosts || ''}
+                            onChange={(e) => updateUserInput(index, 'totalHosts', e.target.value)}
+                            placeholder="254"
+                            className="text-sm"
+                            disabled={exercise.completed}
+                          />
                         </div>
                       </div>
-                    )}
+                    </div>
                     
-                    <div className="mt-3">
+                    {/* Submit Button */}
+                    <div className="flex items-center justify-between">
                       <Button
                         size="sm"
                         onClick={() => checkExercise(index)}
-                        disabled={exercise.completed}
+                        disabled={exercise.completed || !exercise.userInputs?.networkAddress}
                       >
-                        {exercise.completed ? "Completed" : "Check Answer"}
+                        {exercise.completed ? "Completed" : "Submit Answer"}
                       </Button>
+                      
+                      {exercise.completed && exercise.showFeedback && (
+                        <div className="text-sm">
+                          {exercise.isCorrect ? (
+                            <span className="text-green-600 flex items-center">
+                              <Check className="h-4 w-4 mr-1" />
+                              All answers correct!
+                            </span>
+                          ) : (
+                            <span className="text-red-600 flex items-center">
+                              <XCircle className="h-4 w-4 mr-1" />
+                              Some answers are incorrect
+                            </span>
+                          )}
+                        </div>
+                      )}
                     </div>
+                    
+                    {/* Feedback Section */}
+                    {exercise.completed && exercise.showFeedback && exercise.userAnswer && (
+                      <div className={`mt-4 p-3 rounded-lg ${
+                        exercise.isCorrect ? 'bg-green-50 border border-green-200' : 'bg-red-50 border border-red-200'
+                      }`}>
+                        <div className="text-sm font-medium mb-2">
+                          {exercise.isCorrect ? 'Correct Answers:' : 'Your Answers vs Correct Answers:'}
+                        </div>
+                        <div className="grid grid-cols-1 md:grid-cols-2 gap-2 text-xs">
+                          <div className="flex justify-between">
+                            <span>Network Address:</span>
+                            <span className="font-mono">{exercise.userAnswer.networkAddress}</span>
+                          </div>
+                          <div className="flex justify-between">
+                            <span>Broadcast Address:</span>
+                            <span className="font-mono">{exercise.userAnswer.broadcastAddress}</span>
+                          </div>
+                          <div className="flex justify-between">
+                            <span>First Host:</span>
+                            <span className="font-mono">{exercise.userAnswer.firstHost}</span>
+                          </div>
+                          <div className="flex justify-between">
+                            <span>Last Host:</span>
+                            <span className="font-mono">{exercise.userAnswer.lastHost}</span>
+                          </div>
+                          <div className="flex justify-between">
+                            <span>Total Hosts:</span>
+                            <span className="font-mono">{exercise.userAnswer.totalHosts}</span>
+                          </div>
+                        </div>
+                        
+                        {!exercise.isCorrect && (
+                          <div className="mt-2 text-xs text-red-600">
+                            <div className="font-medium mb-1">Your incorrect answers:</div>
+                            {exercise.userInputs?.networkAddress !== exercise.userAnswer.networkAddress && (
+                              <div>Network Address: {exercise.userInputs?.networkAddress} (should be {exercise.userAnswer.networkAddress})</div>
+                            )}
+                            {exercise.userInputs?.broadcastAddress !== exercise.userAnswer.broadcastAddress && (
+                              <div>Broadcast Address: {exercise.userInputs?.broadcastAddress} (should be {exercise.userAnswer.broadcastAddress})</div>
+                            )}
+                            {exercise.userInputs?.firstHost !== exercise.userAnswer.firstHost && (
+                              <div>First Host: {exercise.userInputs?.firstHost} (should be {exercise.userAnswer.firstHost})</div>
+                            )}
+                            {exercise.userInputs?.lastHost !== exercise.userAnswer.lastHost && (
+                              <div>Last Host: {exercise.userInputs?.lastHost} (should be {exercise.userAnswer.lastHost})</div>
+                            )}
+                            {exercise.userInputs?.totalHosts !== exercise.userAnswer.totalHosts.toString() && (
+                              <div>Total Hosts: {exercise.userInputs?.totalHosts} (should be {exercise.userAnswer.totalHosts})</div>
+                            )}
+                          </div>
+                        )}
+                      </div>
+                    )}
                   </div>
                 ))}
               </div>
