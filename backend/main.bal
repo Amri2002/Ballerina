@@ -1,5 +1,6 @@
 import ballerina/http;
 import backend.database as database;
+import backend.dsa as dsa;
 import backend.networking as networking;
 import backend.forum as forum;
 import backend.resources as resources;
@@ -444,14 +445,22 @@ service /api on httpListener {
     }
 
     // Progress tracking endpoints
-    // Progress tracking endpoints are now handled in the database module
-    
+    // Database progress endpoints
     resource function post user_progress_mark_completed(http:Request req) returns http:Response|error {
         return database:user_progress_mark_completed(req, sessionStore, mongoClient);
     }
 
     resource function get user/progress(http:Request req) returns http:Response|error {
         return database:get_user_progress(req, sessionStore, mongoClient);
+    }
+
+    // DSA progress endpoints
+    resource function post dsa_progress_mark_completed(http:Request req) returns http:Response|error {
+        return dsa:dsa_progress_mark_completed(req, sessionStore, mongoClient);
+    }
+
+    resource function get dsa/progress(http:Request req) returns http:Response|error {
+        return dsa:get_dsa_user_progress(req, sessionStore, mongoClient);
     }
 
     // Networking endpoints - now handled by the networking module
