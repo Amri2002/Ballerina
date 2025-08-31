@@ -49,17 +49,17 @@ function createResponse(int statusCode, string payload, string? errorMessage) re
 map<map<anydata>> sessionStore = {};
 
 // Initialize MongoDB indexes
-function createIndexes() {
+function createIndexes() returns error? {
     mongodb:Database|error dbResult = mongoClient->getDatabase("learning_platform");
     if (dbResult is error) {
         log:printError("Failed to connect to database for indexing: " + dbResult.message());
-        return;
+        return dbResult;
     }
     mongodb:Database db = dbResult;
     mongodb:Collection|error collectionResult = db->getCollection("user_progress");
     if (collectionResult is error) {
         log:printError("Failed to get collection for indexing: " + collectionResult.message());
-        return;
+        return collectionResult;
     }
     mongodb:Collection progressCollection = collectionResult;
     // Drop all indexes except _id_
@@ -72,16 +72,26 @@ function createIndexes() {
     error? indexResult = progressCollection->createIndex(indexSpec, { unique: true });
     if (indexResult is error) {
         log:printError("Failed to create userId index: " + indexResult.message());
+        return indexResult;
     } else {
         log:printInfo("Unique index on userId ensured for user_progress collection");
     }
+    return ();
 }
 
 // Call this during initialization
 // Call createIndexes inside a function or at module level, not in the global scope
 function init() {
-    createIndexes();
-    networking:createNetworkingIndexes(mongoClient);
+    // Make initialization more robust - don't fail if indexing fails
+    error? indexResult = createIndexes();
+    if (indexResult is error) {
+        log:printError("Failed to create indexes: " + indexResult.message());
+    }
+    
+    error? networkingIndexResult = networking:createNetworkingIndexes(mongoClient);
+    if (networkingIndexResult is error) {
+        log:printError("Failed to create networking indexes: " + networkingIndexResult.message());
+    }
 }
 
 service /api on httpListener {
@@ -306,7 +316,39 @@ service /api on httpListener {
         // Generate a session token using email and timestamp
         string token = email + "_" + time:utcNow().toString();
         userMap["password"] = ();
+        
+        // Store session in both memory and MongoDB for persistence
         sessionStore[token] = userMap;
+        
+        // Store session in MongoDB for persistence across service restarts
+        mongodb:Collection|error sessionCollectionResult = db->getCollection("user_sessions");
+        if (sessionCollectionResult is error) {
+            log:printError("Failed to get sessions collection: " + sessionCollectionResult.message());
+        } else {
+            mongodb:Collection sessionCollection = sessionCollectionResult;
+            
+            // Create session document
+            record {|
+                string token;
+                json userData;
+                string createdAt;
+                string lastAccessed;
+            |} sessionDoc = {
+                token: token,
+                userData: userMap.toString(),
+                createdAt: time:utcNow().toString(),
+                lastAccessed: time:utcNow().toString()
+            };
+            
+            // Insert or update session
+            map<json> sessionFilter = { token: token };
+            mongodb:Update updateDoc = { "$set": sessionDoc };
+            var upsertResult = sessionCollection->updateOne(sessionFilter, updateDoc, { upsert: true });
+            if (upsertResult is error) {
+                log:printError("Failed to store session in MongoDB: " + upsertResult.message());
+            }
+        }
+        
         string userJson = userMap.toString();
         string loginResponse = "{\"token\": \"" + token + "\", \"user\": " + userJson + "}";
         return createResponse(200, loginResponse, null);
@@ -317,9 +359,82 @@ service /api on httpListener {
         string|http:HeaderNotFoundError authHeader = req.getHeader("Authorization");
         if (authHeader is string && authHeader.startsWith("Bearer ")) {
             string token = authHeader.substring(7, authHeader.length());
+            
+            // First check in-memory session store
             map<anydata>? userMapOpt = sessionStore[token];
-            if userMapOpt is map<anydata> {
+            if (userMapOpt is map<anydata>) {
                 return createResponse(200, userMapOpt.toString(), null);
+            }
+            
+            // If not in memory, check MongoDB sessions collection
+            mongodb:Database|error dbResult = mongoClient->getDatabase("learning_platform");
+            if (dbResult is error) {
+                return createResponse(500, "Database connection failed", dbResult.message());
+            }
+            
+            mongodb:Database db = dbResult;
+            mongodb:Collection|error sessionCollectionResult = db->getCollection("user_sessions");
+            if (sessionCollectionResult is error) {
+                return createResponse(500, "Collection access failed", sessionCollectionResult.message());
+            }
+            
+            mongodb:Collection sessionCollection = sessionCollectionResult;
+            
+            // Find session in MongoDB
+            map<json> sessionFindFilter = { token: token };
+            stream<record {}, error?>|error findResult = sessionCollection->find(sessionFindFilter);
+            if (findResult is error) {
+                return createResponse(500, "Database query failed", findResult.message());
+            }
+            
+            stream<record {}, error?> resultStream = findResult;
+            record {}[] data = [];
+            error? forEachResult = resultStream.forEach(function(record {} value) {
+                data.push(value);
+            });
+            
+            if (forEachResult is error) {
+                return createResponse(500, "Data processing failed", forEachResult.message());
+            }
+            
+            if (data.length() > 0) {
+                // Session found in MongoDB, restore it to memory and return user data
+                map<anydata> sessionData = <map<anydata>>data[0];
+                anydata userDataField = sessionData["userData"];
+                
+                string userDataString = "";
+                if (userDataField is string) {
+                    userDataString = <string>userDataField;
+                } else if (userDataField is json) {
+                    userDataString = <string>userDataField;
+                } else {
+                    return createResponse(500, "Invalid user data format", "User data is not a string or JSON");
+                }
+                
+                // Parse the JSON string back to map<anydata>
+                json|error jsonResult = userDataString.fromJsonString();
+                if (jsonResult is error) {
+                    return createResponse(500, "Failed to parse user data", "Invalid user data format");
+                }
+                map<anydata>|error userMapResult = <map<anydata>>jsonResult;
+                if (userMapResult is error) {
+                    return createResponse(500, "Failed to convert user data", "Invalid user data structure");
+                }
+                map<anydata> userMap = userMapResult;
+                
+                // Restore to memory for faster future access
+                sessionStore[token] = userMap;
+                
+                // Update last accessed time
+                map<json> sessionUpdateFilter = { token: token };
+                map<json> updateFields = { lastAccessed: time:utcNow().toString() };
+                mongodb:Update updateDoc = { "$set": updateFields };
+                var updateResult = sessionCollection->updateOne(sessionUpdateFilter, updateDoc);
+                if (updateResult is error) {
+                    log:printError("Failed to update session last accessed time: " + updateResult.message());
+                }
+                
+                return createResponse(200, userMap.toString(), null);
             } else {
                 return createResponse(401, "Invalid token", "Session not found");
             }
@@ -376,10 +491,7 @@ service /api on httpListener {
     // Temporarily commented out due to compilation issues
     // resource function post networking/topology/failure-test(http:Request req) returns http:Response|error {
     //     return networking:test_topology_failure(req, sessionStore, mongoClient);
-
-
-
-
+    // }
 
     resource function post networking/progress/update(http:Request req) returns http:Response|error {
         return networking:update_learning_progress(req, sessionStore, mongoClient);
