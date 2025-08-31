@@ -1,4 +1,6 @@
 import { useSearchParams } from "react-router-dom";
+import { useEffect, useState } from "react";
+import { dsaService } from "@/services/dsaService";
 import { Button } from "@/components/ui/button";
 import {
 	Card,
@@ -9,7 +11,6 @@ import {
 } from "@/components/ui/card";
 import { Badge } from "@/components/ui/badge";
 import { Play, Clock, ArrowRight, BarChart3, TreePine, Hash, Layers } from "lucide-react";
-
 const algorithms = [
 	{
 		id: "sorting",
@@ -51,12 +52,19 @@ const algorithms = [
 
 export default function DSALessons() {
 	const [, setSearchParams] = useSearchParams();
+	const [completedLessons, setCompletedLessons] = useState<string[]>([]);
 
 	const difficultyColors = {
 		Beginner: "border-success text-success",
 		Intermediate: "border-warning text-warning",
 		Advanced: "border-destructive text-destructive",
 	};
+
+	useEffect(() => {
+		dsaService.getUserProgress().then((data) => {
+			setCompletedLessons(data.completedLessons || []);
+		});
+	}, []);
 
 	const handleStartLesson = (algorithmId: string) => {
 		const newParams = new URLSearchParams();
@@ -81,6 +89,9 @@ export default function DSALessons() {
 								<div>
 									<CardTitle className="text-lg font-semibold">
 										{algorithm.title}
+										{completedLessons.includes(algorithm.id) && (
+											<span className="ml-2 text-success text-base">(Completed)</span>
+										)}
 									</CardTitle>
 									<CardDescription className="text-muted-foreground">
 										{algorithm.description}

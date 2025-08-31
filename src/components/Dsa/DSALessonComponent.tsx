@@ -1,4 +1,5 @@
 import { useState, useEffect } from "react";
+import { dsaService } from "@/services/dsaService";
 import { useNavigate } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import {
@@ -179,25 +180,53 @@ export default function DSALessonComponent({
 	lessonId,
 	onBack,
 }: DSALessonComponentProps) {
-	const [isPlaying, setIsPlaying] = useState(false);
+	const [currentStep, setCurrentStep] = useState(1);
+	const [completedSteps, setCompletedSteps] = useState<number[]>([]);
 	const [progress, setProgress] = useState(0);
+	const [completedLessons, setCompletedLessons] = useState<string[]>([]);
+	const [notFound, setNotFound] = useState(false);
+	const [isPlaying, setIsPlaying] = useState(false);
 
 	const lesson = lessons[lessonId as keyof typeof lessons];
 
 	useEffect(() => {
 		if (!lesson) {
-			onBack();
+			setNotFound(true);
 			return;
+		} else {
+			setNotFound(false);
 		}
+		setCurrentStep(1);
+		setCompletedSteps([]);
+		setProgress(0);
+		dsaService.getUserProgress().then((data) => {
+			setCompletedLessons(data.completedLessons || []);
+		});
+	}, [lessonId]);
 
-		// Calculate progress based on completed steps
-		const completedSteps = lesson.steps.filter((step) => step.completed).length;
+	useEffect(() => {
+		if (!lesson) return;
 		const totalSteps = lesson.steps.length;
-		setProgress((completedSteps / totalSteps) * 100);
-	}, [lesson, onBack]);
+		setProgress((completedSteps.length / totalSteps) * 100);
+		if (completedSteps.length === totalSteps) {
+			dsaService.markCompleted(lessonId, "lesson").catch(() => {});
+		}
+	}, [completedSteps, lesson, lessonId]);
 
-	if (!lesson) {
-		return null;
+	if (notFound) {
+		return (
+			<div className="min-h-screen flex flex-col items-center justify-center bg-background">
+				<div className="bg-white p-8 rounded-lg shadow-md text-center">
+					<h2 className="text-2xl font-bold mb-4 text-destructive">Lesson Not Found</h2>
+					<p className="mb-6 text-muted-foreground">
+						The lesson you are looking for does not exist or is unavailable.
+					</p>
+					<Button onClick={onBack} variant="outline">
+						Back to Lessons
+					</Button>
+				</div>
+			</div>
+		);
 	}
 
 	const difficultyColors = {
@@ -206,18 +235,26 @@ export default function DSALessonComponent({
 		Advanced: "border-destructive text-destructive",
 	};
 
-	const handlePlayPause = () => {
-		setIsPlaying(!isPlaying);
-	};
-
+	const handlePlayPause = () => setIsPlaying((prev) => !prev);
 	const handleReset = () => {
 		setIsPlaying(false);
-		setProgress(0);
+		setCurrentStep(1);
+		setCompletedSteps([]);
 	};
-
 	const handleNext = () => {
-		// Logic to go to next step
-		console.log("Next step");
+		if (!lesson) return;
+		if (!completedSteps.includes(currentStep)) {
+			setCompletedSteps((prev) => [...prev, currentStep]);
+		}
+		if (currentStep < lesson.steps.length) {
+			setCurrentStep((prev) => prev + 1);
+		}
+	};
+	const handlePrev = () => {
+		if (currentStep > 1) setCurrentStep((prev) => prev - 1);
+	};
+	const handleStepClick = (stepId: number) => {
+		setCurrentStep(stepId);
 	};
 
 	return (
@@ -236,7 +273,12 @@ export default function DSALessonComponent({
 									{lesson.icon}
 								</div>
 								<div>
-									<h1 className="text-2xl font-bold">{lesson.title}</h1>
+									<h1 className="text-2xl font-bold">
+										{lesson.title}
+										{completedLessons.includes(lessonId) && (
+											<span className="ml-2 text-success text-base">(Completed)</span>
+										)}
+									</h1>
 									<p className="text-muted-foreground">{lesson.description}</p>
 								</div>
 							</div>
@@ -286,20 +328,21 @@ export default function DSALessonComponent({
 									{lesson.steps.map((step) => (
 										<div
 											key={step.id}
-											className={`flex items-center space-x-3 p-3 rounded-lg transition-colors ${
-												step.id === lesson.currentStep
+											className={`flex items-center space-x-3 p-3 rounded-lg transition-colors cursor-pointer ${
+												step.id === currentStep
 													? "bg-primary/10 border border-primary/20"
 													: "hover:bg-muted/50"
 											}`}
+											onClick={() => handleStepClick(step.id)}
 										>
-											{step.completed ? (
+											{completedSteps.includes(step.id) ? (
 												<CheckCircle className="h-5 w-5 text-success" />
 											) : (
 												<Circle className="h-5 w-5 text-muted-foreground" />
 											)}
 											<span
 												className={`text-sm ${
-													step.id === lesson.currentStep
+													step.id === currentStep
 														? "font-medium text-primary"
 														: "text-muted-foreground"
 												}`}
@@ -323,9 +366,11 @@ export default function DSALessonComponent({
 												<Eye className="h-8 w-8" />
 											</div>
 											<h3 className="text-xl font-semibold mb-2">
-												Algorithm Visualization
+												{lesson.steps[currentStep - 1]?.title}
 											</h3>
-											<p className="text-white/80">Watch the algorithm in action</p>
+											<p className="text-white/80">
+												Step {currentStep} Visualization Placeholder
+											</p>
 										</div>
 
 										{/* Control Buttons */}
@@ -340,7 +385,12 @@ export default function DSALessonComponent({
 											<Button variant="secondary" size="sm" onClick={handleReset}>
 												<RotateCcw className="h-4 w-4" />
 											</Button>
-											<Button variant="secondary" size="sm" onClick={handleNext}>
+											<Button
+												variant="secondary"
+												size="sm"
+												onClick={handleNext}
+												disabled={currentStep === lesson.steps.length}
+											>
 												<SkipForward className="h-4 w-4" />
 											</Button>
 										</div>
@@ -387,13 +437,26 @@ export default function DSALessonComponent({
 
 							{/* Navigation */}
 							<div className="flex items-center justify-between">
-								<Button variant="outline" disabled>
+								<Button
+									variant="outline"
+									onClick={handlePrev}
+									disabled={currentStep === 1}
+								>
 									Previous Step
 								</Button>
-								<Button className="bg-hero-gradient hover:opacity-90 transition-opacity">
-									Next Step
-									<ArrowRight className="ml-2 h-4 w-4" />
-								</Button>
+								{currentStep < lesson.steps.length ? (
+									<Button
+										className="bg-hero-gradient hover:opacity-90 transition-opacity"
+										onClick={handleNext}
+									>
+										Next Step
+										<ArrowRight className="ml-2 h-4 w-4" />
+									</Button>
+								) : (
+									<Button className="bg-success text-white" onClick={onBack}>
+										Finish Lesson
+									</Button>
+								)}
 							</div>
 						</div>
 					</div>

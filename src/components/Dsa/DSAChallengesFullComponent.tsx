@@ -1,5 +1,7 @@
-import { useState } from "react";
+import { useState, useEffect } from "react";
+import { dsaService } from "@/services/dsaService";
 import { Button } from "@/components/ui/button";
+import ChallengeDetail from "./ChallengeDetail";
 import {
 	Card,
 	CardContent,
@@ -152,6 +154,8 @@ export default function DSAChallengesFullComponent({
 }: DSAChallengesFullComponentProps) {
 	const [selectedDifficulty, setSelectedDifficulty] = useState("all");
 	const [selectedCategory, setSelectedCategory] = useState("all");
+	const [completedChallenges, setCompletedChallenges] = useState<string[]>([]);
+	const [activeChallenge, setActiveChallenge] = useState<any | null>(null);
 
 	const difficultyColors = {
 		Easy: "border-success text-success",
@@ -167,6 +171,28 @@ export default function DSAChallengesFullComponent({
 		"Linked Lists": "bg-purple-100 text-purple-800",
 	};
 
+	useEffect(() => {
+		dsaService.getUserProgress().then((data) => {
+			setCompletedChallenges(data.completedChallenges || []);
+		});
+	}, []);
+
+	const handleMarkCompleted = async (challengeId: string) => {
+		await dsaService.markCompleted(challengeId, "challenge");
+		dsaService.getUserProgress().then((data) => {
+			setCompletedChallenges(data.completedChallenges || []);
+		});
+	};
+
+	const handleStartChallenge = (challenge: any) => {
+		setActiveChallenge(challenge);
+	};
+
+	const handleCompleteChallenge = (challengeId: string) => {
+		handleMarkCompleted(challengeId);
+		setActiveChallenge(null);
+	};
+
 	const filteredChallenges = challenges.filter((challenge) => {
 		const difficultyMatch =
 			selectedDifficulty === "all" ||
@@ -178,11 +204,23 @@ export default function DSAChallengesFullComponent({
 	});
 
 	const totalPoints = challenges
-		.filter((c) => c.completed)
+		.filter((c) => completedChallenges.includes(c.id.toString()))
 		.reduce((sum, c) => sum + c.points, 0);
-	const completedChallenges = challenges.filter((c) => c.completed).length;
+	const completedCount = challenges.filter((c) =>
+		completedChallenges.includes(c.id.toString())
+	).length;
 	const totalChallenges = challenges.length;
-	const progress = (completedChallenges / totalChallenges) * 100;
+	const progress = (completedCount / totalChallenges) * 100;
+
+	if (activeChallenge) {
+		return (
+			<ChallengeDetail
+				challenge={activeChallenge}
+				onBack={() => setActiveChallenge(null)}
+				onComplete={handleCompleteChallenge}
+			/>
+		);
+	}
 
 	return (
 		<div className="min-h-screen bg-background">
@@ -366,18 +404,26 @@ export default function DSAChallengesFullComponent({
 												</div>
 												<Button
 													className={
-														challenge.completed
+														completedChallenges.includes(challenge.id.toString())
 															? "bg-success hover:bg-success/90"
 															: "bg-hero-gradient hover:opacity-90 transition-opacity"
 													}
-													disabled={challenge.locked}
+													disabled={
+														challenge.locked ||
+														completedChallenges.includes(challenge.id.toString())
+													}
+													onClick={() =>
+														!challenge.locked &&
+														!completedChallenges.includes(challenge.id.toString()) &&
+														handleStartChallenge(challenge)
+													}
 												>
 													{challenge.locked ? (
 														<>
 															<Lock className="mr-2 h-4 w-4" />
 															Locked
 														</>
-													) : challenge.completed ? (
+													) : completedChallenges.includes(challenge.id.toString()) ? (
 														<>
 															<CheckCircle className="mr-2 h-4 w-4" />
 															Completed
