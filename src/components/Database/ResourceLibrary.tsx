@@ -1,7 +1,10 @@
-
 import React, { useEffect, useState } from "react";
 import axios from "axios";
 import { useAuth } from "@/contexts/AuthContext";
+import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/components/ui/card";
+import { Button } from "@/components/ui/button";
+import { Badge } from "@/components/ui/badge";
+import { ExternalLink, Play, FileText, Star } from "lucide-react";
 
 interface Resource {
   id: string;
@@ -76,7 +79,6 @@ const resources: Resource[] = [
 const ResourceLibrary: React.FC = () => {
   const { user, isAuthenticated } = useAuth();
   const [ratings, setRatings] = useState<{ [id: string]: { avg: number; count: number; userRating?: number } }>({});
-  const [loading, setLoading] = useState(false);
   const [submitting, setSubmitting] = useState<string | null>(null);
 
   useEffect(() => {
@@ -109,53 +111,105 @@ const ResourceLibrary: React.FC = () => {
     }
   };
 
+  const getCategoryIcon = (category: string) => {
+    return category === "video" ? <Play className="h-4 w-4" /> : <FileText className="h-4 w-4" />;
+  };
+
+  const getCategoryColor = (category: string) => {
+    return category === "video" ? "bg-blue-500/10 text-blue-700 border-blue-200" : "bg-green-500/10 text-green-700 border-green-200";
+  };
+
   return (
-    <div className="max-w-3xl mx-auto py-8">
-      <h1 className="text-3xl font-bold mb-6">Resource Library</h1>
-      <ul className="space-y-6">
-        {resources.map((r) => (
-          <li key={r.id} className="bg-white shadow rounded p-6">
-            <div className="font-bold text-lg mb-2">{r.title}</div>
-            <div className="text-gray-700 mb-2">{r.description}</div>
-            {r.category === "video" ? (
-              <div className="aspect-w-16 aspect-h-9 mb-2">
-                <iframe
-                  src={r.url}
-                  title={r.title}
-                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
-                  allowFullScreen
-                  className="w-full h-64 rounded"
-                ></iframe>
+    <div className="container mx-auto px-4 py-8 max-w-6xl">
+      <div className="mb-8">
+        <h1 className="text-4xl font-bold mb-2">Resource Library</h1>
+        <p className="text-muted-foreground text-lg">Curated learning materials for computer science topics</p>
+      </div>
+
+      <div className="grid gap-6 md:grid-cols-1 lg:grid-cols-2">
+        {resources.map((resource) => (
+          <Card key={resource.id} className="group hover:shadow-md transition-all duration-200 border-border/50">
+            <CardHeader className="pb-3">
+              <div className="flex items-start justify-between gap-3">
+                <div className="flex-1">
+                  <CardTitle className="text-xl mb-2 group-hover:text-primary transition-colors">
+                    {resource.title}
+                  </CardTitle>
+                  <CardDescription className="text-sm leading-relaxed">
+                    {resource.description}
+                  </CardDescription>
+                </div>
+                <Badge 
+                  variant="outline" 
+                  className={`flex items-center gap-1 ${getCategoryColor(resource.category)}`}
+                >
+                  {getCategoryIcon(resource.category)}
+                  {resource.category}
+                </Badge>
               </div>
-            ) : (
-              <a
-                href={r.url}
-                target="_blank"
-                rel="noopener noreferrer"
-                className="text-blue-600 underline"
-              >
-                Read Article
-              </a>
-            )}
-            <div className="mt-4 flex items-center space-x-2">
-              <span className="font-medium">Rating:</span>
-              <StarDisplay value={ratings[r.id]?.avg || 0} />
-              <span className="text-sm text-gray-500">({ratings[r.id]?.count || 0})</span>
-            </div>
-            {isAuthenticated && (
-              <div className="mt-2">
-                <span className="text-sm mr-2">Your Rating:</span>
-                <StarInput
-                  value={ratings[r.id]?.userRating || 0}
-                  onChange={val => handleRate(r.id, val)}
-                  disabled={submitting === r.id}
-                />
-                {submitting === r.id && <span className="ml-2 text-xs text-gray-400">Submitting...</span>}
+            </CardHeader>
+
+            <CardContent className="space-y-4">
+              {resource.category === "video" ? (
+                <div className="relative">
+                  <iframe
+                    src={resource.url}
+                    title={resource.title}
+                    allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                    allowFullScreen
+                    className="w-full h-48 rounded-md border"
+                  />
+                </div>
+              ) : (
+                <Button variant="outline" className="w-full" asChild>
+                  <a
+                    href={resource.url}
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="flex items-center gap-2"
+                  >
+                    <ExternalLink className="h-4 w-4" />
+                    Read Article
+                  </a>
+                </Button>
+              )}
+
+              <div className="border-t pt-4">
+                <div className="flex items-center justify-between mb-2">
+                  <div className="flex items-center gap-2">
+                    <Star className="h-4 w-4 text-muted-foreground" />
+                    <span className="text-sm font-medium">Rating:</span>
+                    <StarDisplay value={ratings[resource.id]?.avg || 0} />
+                    <span className="text-sm text-muted-foreground">
+                      ({ratings[resource.id]?.count || 0} votes)
+                    </span>
+                  </div>
+                </div>
+
+                {isAuthenticated && (
+                  <div className="flex items-center gap-2 pt-2 border-t">
+                    <span className="text-sm text-muted-foreground">Your rating:</span>
+                    <StarInput
+                      value={ratings[resource.id]?.userRating || 0}
+                      onChange={val => handleRate(resource.id, val)}
+                      disabled={submitting === resource.id}
+                    />
+                    {submitting === resource.id && (
+                      <span className="text-xs text-muted-foreground ml-2">Saving...</span>
+                    )}
+                  </div>
+                )}
+
+                {!isAuthenticated && (
+                  <p className="text-xs text-muted-foreground pt-2 border-t">
+                    Sign in to rate this resource
+                  </p>
+                )}
               </div>
-            )}
-          </li>
+            </CardContent>
+          </Card>
         ))}
-      </ul>
+      </div>
     </div>
   );
 };
@@ -164,34 +218,54 @@ const ResourceLibrary: React.FC = () => {
 function StarDisplay({ value }: { value: number }) {
   const rounded = Math.round(value * 2) / 2;
   return (
-    <span>
+    <div className="flex items-center gap-0.5">
       {[1, 2, 3, 4, 5].map(i => (
-        <span key={i} className={i <= rounded ? "text-yellow-400" : "text-gray-300"}>
-          ★
-        </span>
+        <Star 
+          key={i} 
+          className={`h-4 w-4 ${
+            i <= rounded 
+              ? "fill-yellow-400 text-yellow-400" 
+              : "text-muted-foreground"
+          }`}
+        />
       ))}
-    </span>
+    </div>
   );
 }
 
 // Star input component
-function StarInput({ value, onChange, disabled }: { value: number; onChange: (v: number) => void; disabled?: boolean }) {
+function StarInput({ 
+  value, 
+  onChange, 
+  disabled 
+}: { 
+  value: number; 
+  onChange: (v: number) => void; 
+  disabled?: boolean; 
+}) {
   return (
-    <span>
+    <div className="flex items-center gap-0.5">
       {[1, 2, 3, 4, 5].map(i => (
-        <button
+        <Button
           key={i}
-          type="button"
-          className={
-            "text-xl mx-0.5 " + (i <= value ? "text-yellow-400" : "text-gray-300") + (disabled ? " opacity-50 cursor-not-allowed" : "")
-          }
+          variant="ghost"
+          size="sm"
+          className={`p-0 h-auto hover:scale-110 transition-transform ${
+            disabled ? "opacity-50 cursor-not-allowed" : ""
+          }`}
           onClick={() => !disabled && onChange(i)}
           disabled={disabled}
         >
-          ★
-        </button>
+          <Star 
+            className={`h-4 w-4 ${
+              i <= value 
+                ? "fill-yellow-400 text-yellow-400" 
+                : "text-muted-foreground hover:text-yellow-400"
+            }`}
+          />
+        </Button>
       ))}
-    </span>
+    </div>
   );
 }
 
