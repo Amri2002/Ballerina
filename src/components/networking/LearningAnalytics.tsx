@@ -48,116 +48,8 @@ const LearningAnalytics: React.FC = () => {
   const { user } = useAuth();
   const [analytics, setAnalytics] = useState<LearningAnalytics | null>(null);
   const [isLoading, setIsLoading] = useState(true);
-  const [selectedTimeRange, setSelectedTimeRange] = useState('7d');
 
-  const timeRanges = [
-    { value: '1d', label: 'Today' },
-    { value: '7d', label: 'Last 7 days' },
-    { value: '30d', label: 'Last 30 days' },
-    { value: '90d', label: 'Last 90 days' }
-  ];
 
-  const achievements: Achievement[] = [
-    {
-      id: 'first-steps',
-      name: 'First Steps',
-      description: 'Complete your first networking module',
-      icon: '🎯',
-      unlockedAt: new Date(Date.now() - 86400000).toISOString(),
-      category: 'learning',
-      rarity: 'common'
-    },
-    {
-      id: 'tcp-master',
-      name: 'TCP Master',
-      description: 'Complete all TCP handshake exercises',
-      icon: '🔗',
-      unlockedAt: new Date(Date.now() - 172800000).toISOString(),
-      category: 'technical',
-      rarity: 'rare'
-    },
-    {
-      id: 'security-expert',
-      name: 'Security Expert',
-      description: 'Complete 10 security scans',
-      icon: '🛡️',
-      unlockedAt: new Date(Date.now() - 259200000).toISOString(),
-      category: 'security',
-      rarity: 'epic'
-    },
-    {
-      id: 'network-architect',
-      name: 'Network Architect',
-      description: 'Design 5 network topologies',
-      icon: '🏗️',
-      unlockedAt: new Date(Date.now() - 345600000).toISOString(),
-      category: 'design',
-      rarity: 'legendary'
-    },
-    {
-      id: 'speed-learner',
-      name: 'Speed Learner',
-      description: 'Complete 3 modules in one day',
-      icon: '⚡',
-      unlockedAt: new Date(Date.now() - 432000000).toISOString(),
-      category: 'achievement',
-      rarity: 'rare'
-    }
-  ];
-
-  const mockAnalytics: LearningAnalytics = {
-    userId: user?.id || 'demo-user',
-    timestamp: new Date().toISOString(),
-    modules: {
-      tcpHandshake: {
-        completed: 4,
-        total: 5,
-        progress: 80,
-        lastAccessed: new Date(Date.now() - 3600000).toISOString(),
-        achievements: ['tcp-master']
-      },
-      dnsResolution: {
-        completed: 3,
-        total: 4,
-        progress: 75,
-        lastAccessed: new Date(Date.now() - 7200000).toISOString(),
-        achievements: []
-      },
-      subnetCalculator: {
-        completed: 5,
-        total: 6,
-        progress: 83,
-        lastAccessed: new Date(Date.now() - 10800000).toISOString(),
-        achievements: []
-      },
-      networkTopology: {
-        completed: 2,
-        total: 3,
-        progress: 67,
-        lastAccessed: new Date(Date.now() - 14400000).toISOString(),
-        achievements: ['network-architect']
-      },
-      protocolAnalysis: {
-        completed: 1,
-        total: 4,
-        progress: 25,
-        lastAccessed: new Date(Date.now() - 18000000).toISOString(),
-        achievements: []
-      },
-      securityScanning: {
-        completed: 3,
-        total: 5,
-        progress: 60,
-        lastAccessed: new Date(Date.now() - 21600000).toISOString(),
-        achievements: ['security-expert']
-      }
-    },
-    achievements: achievements.slice(0, 4),
-    totalProgress: 65,
-    timeSpent: 1240, // minutes
-    streak: 7,
-    level: 15
-  };
 
   useEffect(() => {
     const fetchAnalytics = async () => {
@@ -166,14 +58,19 @@ const LearningAnalytics: React.FC = () => {
         const response = await fetch(`${import.meta.env.VITE_API_BASE_URL || 'http://localhost:3002/api'}/networking/analytics/user?userId=${user?.id || 'demo-user'}`);
         if (response.ok) {
           const data = await response.json();
-          setAnalytics(data);
+          // Only set analytics if we have valid data
+          if (data && data.modules && data.achievements) {
+            setAnalytics(data);
+          } else {
+            setAnalytics(null);
+          }
         } else {
-          // Use mock data if API fails
-          setAnalytics(mockAnalytics);
+          // No data available if API fails
+          setAnalytics(null);
         }
       } catch (error) {
         console.error('Error fetching analytics:', error);
-        setAnalytics(mockAnalytics);
+        setAnalytics(null);
       } finally {
         setIsLoading(false);
       }
@@ -206,6 +103,7 @@ const LearningAnalytics: React.FC = () => {
   };
 
   const formatTime = (minutes: number) => {
+    if (!minutes || minutes <= 0) return '0h 0m';
     const hours = Math.floor(minutes / 60);
     const mins = minutes % 60;
     return `${hours}h ${mins}m`;
@@ -245,9 +143,39 @@ const LearningAnalytics: React.FC = () => {
 
   if (!analytics) {
     return (
-      <Alert>
-        <AlertDescription>Failed to load learning analytics.</AlertDescription>
-      </Alert>
+      <div className="space-y-6">
+        <Alert>
+          <AlertDescription>
+            No learning analytics data available. Complete some networking modules to see your progress and achievements.
+          </AlertDescription>
+        </Alert>
+        
+        <Card>
+          <CardHeader>
+            <CardTitle>Getting Started</CardTitle>
+            <CardDescription>Start learning to unlock analytics and achievements</CardDescription>
+          </CardHeader>
+          <CardContent>
+            <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+              <div className="text-center p-4 border rounded-lg">
+                <div className="text-3xl mb-2">🔗</div>
+                <div className="font-medium">TCP Handshake</div>
+                <div className="text-sm text-gray-500">Learn the fundamentals</div>
+              </div>
+              <div className="text-center p-4 border rounded-lg">
+                <div className="text-3xl mb-2">🌐</div>
+                <div className="font-medium">DNS Resolution</div>
+                <div className="text-sm text-gray-500">Understand domain names</div>
+              </div>
+              <div className="text-center p-4 border rounded-lg">
+                <div className="text-3xl mb-2">🧮</div>
+                <div className="font-medium">Subnet Calculator</div>
+                <div className="text-sm text-gray-500">Master IP addressing</div>
+              </div>
+            </div>
+          </CardContent>
+        </Card>
+      </div>
     );
   }
 
@@ -264,9 +192,9 @@ const LearningAnalytics: React.FC = () => {
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-blue-600">{analytics.totalProgress}%</div>
-            <Progress value={analytics.totalProgress} className="mt-2" />
-            <p className="text-xs text-gray-500 mt-1">Level {analytics.level}</p>
+            <div className="text-2xl font-bold text-blue-600">{analytics.totalProgress || 0}%</div>
+            <Progress value={analytics.totalProgress || 0} className="mt-2" />
+            <p className="text-xs text-gray-500 mt-1">Level {analytics.level || 1}</p>
           </CardContent>
         </Card>
 
@@ -278,7 +206,7 @@ const LearningAnalytics: React.FC = () => {
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-green-600">{formatTime(analytics.timeSpent)}</div>
+            <div className="text-2xl font-bold text-green-600">{formatTime(analytics.timeSpent || 0)}</div>
             <p className="text-xs text-gray-500 mt-1">Total learning time</p>
           </CardContent>
         </Card>
@@ -291,7 +219,7 @@ const LearningAnalytics: React.FC = () => {
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-yellow-600">{analytics.achievements.length}</div>
+            <div className="text-2xl font-bold text-yellow-600">{analytics.achievements?.length || 0}</div>
             <p className="text-xs text-gray-500 mt-1">Unlocked badges</p>
           </CardContent>
         </Card>
@@ -304,7 +232,7 @@ const LearningAnalytics: React.FC = () => {
             </CardTitle>
           </CardHeader>
           <CardContent>
-            <div className="text-2xl font-bold text-purple-600">{analytics.streak} days</div>
+            <div className="text-2xl font-bold text-purple-600">{analytics.streak || 0} days</div>
             <p className="text-xs text-gray-500 mt-1">Learning streak</p>
           </CardContent>
         </Card>
@@ -325,7 +253,7 @@ const LearningAnalytics: React.FC = () => {
 
             <TabsContent value="modules" className="space-y-4">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                {Object.entries(analytics.modules).map(([key, module]) => (
+                {analytics.modules && Object.entries(analytics.modules).map(([key, module]) => (
                   <Card key={key} className="border-l-4 border-l-blue-500">
                     <CardContent className="p-4">
                       <div className="flex items-center justify-between mb-3">
@@ -334,22 +262,22 @@ const LearningAnalytics: React.FC = () => {
                           <div>
                             <div className="font-medium">{getModuleName(key)}</div>
                             <div className="text-sm text-gray-500">
-                              {module.completed}/{module.total} completed
+                              {module?.completed || 0}/{module?.total || 0} completed
                             </div>
                           </div>
                         </div>
-                        <Badge variant="outline">{module.progress}%</Badge>
+                        <Badge variant="outline">{module?.progress || 0}%</Badge>
                       </div>
-                      <Progress value={module.progress} className="mb-3" />
-                      {module.lastAccessed && (
+                      <Progress value={module?.progress || 0} className="mb-3" />
+                      {module?.lastAccessed && (
                         <div className="text-xs text-gray-500">
                           Last accessed: {new Date(module.lastAccessed).toLocaleDateString()}
                         </div>
                       )}
-                      {module.achievements.length > 0 && (
+                      {module?.achievements && module.achievements.length > 0 && (
                         <div className="flex space-x-1 mt-2">
                           {module.achievements.map((achievementId) => {
-                            const achievement = analytics.achievements.find(a => a.id === achievementId);
+                            const achievement = analytics.achievements?.find(a => a.id === achievementId);
                             return achievement ? (
                               <Badge key={achievementId} className={getRarityColor(achievement.rarity)}>
                                 {achievement.icon} {achievement.name}
@@ -366,7 +294,7 @@ const LearningAnalytics: React.FC = () => {
 
             <TabsContent value="achievements" className="space-y-4">
               <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                {analytics.achievements.map((achievement) => (
+                {analytics.achievements?.map((achievement) => (
                   <Card key={achievement.id} className="border-l-4 border-l-yellow-500">
                     <CardContent className="p-4">
                       <div className="flex items-start justify-between">
