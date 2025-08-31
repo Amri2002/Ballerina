@@ -317,6 +317,11 @@ service /api on httpListener {
         return networking:save_subnet_calculation(req, sessionStore, mongoClient);
     }
 
+    resource function post networking/subnet/exercise_progress(http:Request req) returns http:Response|error {
+        http:Response|error result = networking:save_subnet_exercise_progress(req, sessionStore, mongoClient);
+        return result;
+    }
+
     resource function post networking/topology/save(http:Request req) returns http:Response|error {
         return networking:save_network_topology(req, sessionStore, mongoClient);
     }
@@ -342,6 +347,7 @@ service /api on httpListener {
         return networking:update_learning_progress(req, sessionStore, mongoClient);
     }
 
+    // Progress endpoint that accepts userId as query parameter
     resource function get networking/progress/user(http:Request req) returns http:Response|error {
         return networking:get_learning_progress(req, sessionStore, mongoClient);
     }
@@ -352,6 +358,30 @@ service /api on httpListener {
 
     resource function get networking/modules() returns http:Response|error {
         return networking:get_networking_modules();
+    }
+
+    // Protocol analysis endpoint
+    resource function post networking/protocol/analyze(http:Request req) returns http:Response|error {
+        // TODO: Implement protocol analysis functionality
+        return createResponse(200, "{\"message\": \"Protocol analysis endpoint ready\"}", null);
+    }
+
+    // Security scanning endpoint
+    resource function post networking/security/scan(http:Request req) returns http:Response|error {
+        // TODO: Implement security scanning functionality
+        return createResponse(200, "{\"message\": \"Security scanning endpoint ready\"}", null);
+    }
+
+    // Performance monitoring endpoint
+    resource function post networking/performance/monitor(http:Request req) returns http:Response|error {
+        // TODO: Implement performance monitoring functionality
+        return createResponse(200, "{\"message\": \"Performance monitoring endpoint ready\"}", null);
+    }
+
+    // Learning analytics endpoint
+    resource function get networking/analytics/user(http:Request req) returns http:Response|error {
+        // TODO: Implement learning analytics functionality
+        return createResponse(200, "{\"message\": \"Learning analytics endpoint ready\"}", null);
     }
 
     // Global OPTIONS handler for CORS preflight requests
