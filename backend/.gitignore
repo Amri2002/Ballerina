@@ -1,0 +1,31 @@
+# Ballerina build artifacts
+target/
+*.jar
+*.balx
+
+# Environment files with secrets
+env.toml
+.env
+.env.local
+.env.production
+
+# Logs
+*.log
+logs/
+
+# IDE files
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Temporary files
+*.tmp
+*.temp
+
+
+

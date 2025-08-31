@@ -1,73 +1,148 @@
-# Welcome to your Lovable project
+# CodeVista - Interactive Learning Platform
 
-## Project info
+A comprehensive learning platform built with React + TypeScript frontend and Ballerina backend, featuring interactive modules for networking, databases, DSA, and more.
 
-**URL**: https://lovable.dev/projects/efc225f4-6dec-4840-8a51-fc112057bc69
+## 🏗️ Project Architecture
 
-## How can I edit this code?
-
-There are several ways of editing your application.
-
-**Use Lovable**
-
-Simply visit the [Lovable Project](https://lovable.dev/projects/efc225f4-6dec-4840-8a51-fc112057bc69) and start prompting.
-
-Changes made via Lovable will be committed automatically to this repo.
-
-**Use your preferred IDE**
-
-If you want to work locally using your own IDE, you can clone this repo and push changes. Pushed changes will also be reflected in Lovable.
-
-The only requirement is having Node.js & npm installed - [install with nvm](https://github.com/nvm-sh/nvm#installing-and-updating)
-
-Follow these steps:
-
-```sh
-# Step 1: Clone the repository using the project's Git URL.
-git clone <YOUR_GIT_URL>
-
-# Step 2: Navigate to the project directory.
-cd <YOUR_PROJECT_NAME>
-
-# Step 3: Install the necessary dependencies.
-npm i
-
-# Step 4: Start the development server with auto-reloading and an instant preview.
-npm run dev
+```
+CodeVista/
+├── frontend/                 # React + TypeScript + Vite
+│   ├── src/
+│   │   ├── components/      # UI components and modules
+│   │   ├── pages/          # Application pages
+│   │   ├── services/       # API services
+│   │   └── contexts/       # React contexts
+│   └── package.json
+├── backend/                  # Ballerina backend
+│   ├── modules/            # Backend modules
+│   ├── main.bal            # Main entry point
+│   └── Ballerina.toml      # Ballerina configuration
+└── README.md
 ```
 
-**Edit a file directly in GitHub**
+## 🚀 Features
 
-- Navigate to the desired file(s).
-- Click the "Edit" button (pencil icon) at the top right of the file view.
-- Make your changes and commit the changes.
+- **Networking Module**: TCP handshake simulation, DNS resolution, subnet calculator, network topology designer
+- **Database Module**: ER diagram designer, SQL query builder, learning resources
+- **DSA Module**: Data structures and algorithms challenges with interactive playground
+- **Forum**: Community discussion platform
+- **Authentication**: JWT-based user authentication
+- **Progress Tracking**: Learning analytics and progress monitoring
 
-**Use GitHub Codespaces**
+## 📋 Prerequisites
 
-- Navigate to the main page of your repository.
-- Click on the "Code" button (green button) near the top right.
-- Select the "Codespaces" tab.
-- Click on "New codespace" to launch a new Codespace environment.
-- Edit files directly within the Codespace and commit and push your changes once you're done.
+### Required Software
+- **Node.js** (v18 or higher)
+- **npm** or **yarn** or **bun**
+- **Ballerina** (v2201.12.7 or higher)
+- **MongoDB** (local or Atlas cloud)
 
-## What technologies are used for this project?
+### Optional
+- **Git** for version control
+- **VS Code** with Ballerina extension
 
-This project is built with:
+## 🛠️ Installation & Setup
 
-- Vite
-- TypeScript
-- React
-- shadcn-ui
-- Tailwind CSS
+### 1. Clone the Repository
+```bash
+git clone <your-repository-url>
+cd CodeVista
+```
 
-## How can I deploy this project?
+### 2. Install Frontend Dependencies
+```bash
+npm install
+# or
+yarn install
+# or
+bun install
+```
 
-Simply open [Lovable](https://lovable.dev/projects/efc225f4-6dec-4840-8a51-fc112057bc69) and click on Share -> Publish.
+### 3. Install Backend Dependencies
+```bash
+cd backend
+npm install
+```
 
-## Can I connect a custom domain to my Lovable project?
+### 4. Install Ballerina Dependencies
+```bash
+cd backend
+bal build
+```
 
-Yes, you can!
+## ⚙️ Environment Configuration
 
-To connect a domain, navigate to Project > Settings > Domains and click Connect Domain.
+### Frontend Environment
+create .env in main folder and 
+VITE_API_BASE_URL=http://localhost:3002/api
+VITE_APP_NAME=CodeVista
+VITE_APP_VERSION=1.0.0
 
-Read more here: [Setting up a custom domain](https://docs.lovable.dev/tips-tricks/custom-domain#step-by-step-guide)
+### Backend Environment
+Edit `backend/config.bal` to configure your environment:
+
+```ballerina
+// Configuration file for the learning platform backend
+// Database configuration
+public const string MONGODB_CONNECTION_STRING = "mongodb+srv://mohamedashrif325:rqpBqU7bpqO72qkO@cluster0.3591lxr.mongodb.net/";
+public const string DATABASE_NAME = "learning_platform";
+
+// JWT configuration
+public const string JWT_SECRET = "your-super-secret-jwt-key-change-in-production";
+
+// Server configuration
+public const int SERVER_PORT = 3001;
+```
+
+### MongoDB Setup
+1. **Local MongoDB**: Install and start MongoDB service
+2. **MongoDB Atlas**: Create a cluster and get connection string
+3. Update the connection string in `backend/config.bal`
+
+## 🚀 Running the Project
+
+### Option 1: Quick Start (Windows)
+Use the provided batch script for Windows:
+
+```bash
+cd backend
+npm run dev
+
+in another terminal
+cd backend
+bal run
+```
+
+This will automatically start:
+- Ballerina backend on port 3001
+- CORS proxy on port 3002
+
+
+
+#### Start Frontend
+```bash
+# In a new terminal (from project root)
+npm run dev
+# or
+yarn dev
+# or
+bun dev
+```
+
+
+
+## 🌐 Service URLs
+
+| Service | URL | Description |
+|---------|-----|-------------|
+| Frontend | http://localhost:8080 | React application |
+| Backend API | http://localhost:3001 | Ballerina backend |
+| CORS Proxy | http://localhost:3002 | CORS handling proxy |
+
+
+
+
+
+
+
+

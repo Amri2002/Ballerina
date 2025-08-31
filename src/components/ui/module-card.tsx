@@ -12,7 +12,7 @@ interface ModuleCardProps {
   features: string[];
   icon: ReactNode;
   href: string;
-  difficulty: "Beginner" | "Intermediate" | "Advanced";
+  
   className?: string;
 }
 
@@ -22,14 +22,10 @@ export function ModuleCard({
   features, 
   icon, 
   href, 
-  difficulty,
+
   className 
 }: ModuleCardProps) {
-  const difficultyColors = {
-    Beginner: "bg-green-100 text-green-800 border-green-200",
-    Intermediate: "bg-yellow-100 text-yellow-800 border-yellow-200", 
-    Advanced: "bg-red-100 text-red-800 border-red-200"
-  };
+ 
 
   return (
     <Card className={cn(
@@ -41,9 +37,7 @@ export function ModuleCard({
           <div className="w-12 h-12 rounded-xl bg-primary/10 flex items-center justify-center text-primary group-hover:bg-primary group-hover:text-primary-foreground transition-colors">
             {icon}
           </div>
-          <Badge variant="outline" className={difficultyColors[difficulty]}>
-            {difficulty}
-          </Badge>
+          
         </div>
         <CardTitle className="text-xl font-bold text-foreground group-hover:text-primary transition-colors">
           {title}

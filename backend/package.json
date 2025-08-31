@@ -1,0 +1,28 @@
+{
+  "name": "learning-platform-backend",
+  "version": "1.0.0",
+  "description": "Backend for Learning Platform with Ballerina and CORS Proxy",
+  "main": "working-cors-proxy.js",
+  "type": "module",
+  "scripts": {
+  "start": "node working-cors-proxy.js",
+  "dev": "start node working-cors-proxy.js && start node progress-microservice.cjs && start node resource-rating-microservice.cjs && start node update-dsa-progress.cjs",
+  "bal:run": "bal run src/main.bal",
+  "bal:build": "bal build",
+  "start:all": "start bal:run && start dev"
+  },
+  "dependencies": {
+    "cors": "^2.8.5",
+    "express": "^4.21.2",
+    "mongodb": "^6.19.0",
+    "node-fetch": "^3.3.2"
+  },
+  "keywords": [
+    "ballerina",
+    "backend",
+    "cors",
+    "proxy"
+  ],
+  "author": "Your Name",
+  "license": "MIT"
+}
