@@ -479,56 +479,64 @@ export default function NetworkTopology() {
         // Generate packet path based on topology
         const path = generatePacketPath(source, target, currentTopology);
         
-        const packetColors = {
-          file: '#ff6b6b',      // Red for file transfers
-          data: '#4ecdc4',      // Teal for data packets
-          control: '#45b7d1'    // Blue for control packets
-        };
+        // Only create packet if we have a valid path
+        if (path.length > 1) {
+          const packetColors = {
+            file: '#ff6b6b',      // Red for file transfers
+            data: '#4ecdc4',      // Teal for data packets
+            control: '#45b7d1'    // Blue for control packets
+          };
 
-        const newPacket: Packet = {
-          id: `packet-${Date.now()}-${Math.random()}`,
-          source,
-          destination: target,
-          data: packetType === 'file' ? `File: document_${Math.random().toString(36).substr(2, 5)}.pdf` : 
-                packetType === 'data' ? `Data: ${Math.random().toString(36).substr(2, 9)}` :
-                `Control: ${Math.random().toString(36).substr(2, 6)}`,
-          timestamp: Date.now(),
-          status: 'transmitting',
-          path: path,
-          currentPosition: 0,
-          type: packetType as 'file' | 'data' | 'control',
-          size: packetType === 'file' ? Math.floor(Math.random() * 1000) + 100 : undefined,
-          color: packetColors[packetType as keyof typeof packetColors],
-          progress: 0
-        };
-        
-        setPackets(prev => [...prev.slice(-12), newPacket]); // Keep last 12 packets
-        
-        // Animate packet progress
-        const progressInterval = setInterval(() => {
-          setPackets(prev => prev.map(p => {
-            if (p.id === newPacket.id && p.status === 'transmitting') {
-              const newProgress = Math.min(1, (Date.now() - p.timestamp) / 4000);
-              return { ...p, progress: newProgress };
-            }
-            return p;
-          }));
-        }, 100);
-        
-        // Simulate packet delivery
-        setTimeout(() => {
-          setPackets(prev => prev.map(p => 
-            p.id === newPacket.id ? { ...p, status: 'delivered', progress: 1 } : p
-          ));
-          clearInterval(progressInterval);
-        }, 4000);
+          const newPacket: Packet = {
+            id: `packet-${Date.now()}-${Math.random()}`,
+            source,
+            destination: target,
+            data: packetType === 'file' ? `File: document_${Math.random().toString(36).substr(2, 5)}.pdf` : 
+                  packetType === 'data' ? `Data: ${Math.random().toString(36).substr(2, 9)}` :
+                  `Control: ${Math.random().toString(36).substr(2, 6)}`,
+            timestamp: Date.now(),
+            status: 'transmitting',
+            path: path,
+            currentPosition: 0,
+            type: packetType as 'file' | 'data' | 'control',
+            size: packetType === 'file' ? Math.floor(Math.random() * 1000) + 100 : undefined,
+            color: packetColors[packetType as keyof typeof packetColors],
+            progress: 0
+          };
+          
+          setPackets(prev => [...prev.slice(-15), newPacket]); // Keep last 15 packets
+          
+          // Animate packet progress along the path
+          const progressInterval = setInterval(() => {
+            setPackets(prev => prev.map(p => {
+              if (p.id === newPacket.id && p.status === 'transmitting') {
+                const newProgress = Math.min(1, (Date.now() - p.timestamp) / 6000); // Slower animation
+                return { ...p, progress: newProgress };
+              }
+              return p;
+            }));
+          }, 100);
+          
+          // Simulate packet delivery
+          setTimeout(() => {
+            setPackets(prev => prev.map(p => 
+              p.id === newPacket.id ? { ...p, status: 'delivered', progress: 1 } : p
+            ));
+            clearInterval(progressInterval);
+          }, 6000); // Slower delivery time
+        }
       }
-    }, animationSpeed);
+    }, animationSpeed * 2); // Slower packet generation
   };
 
   // Generate packet path based on topology type
   const generatePacketPath = (source: string, target: string, topology: TopologyType): string[] => {
     const path = [source];
+    
+    // If source and target are the same, return single device
+    if (source === target) {
+      return [source];
+    }
     
     switch (topology.id) {
       case 'star':
@@ -536,6 +544,7 @@ export default function NetworkTopology() {
         if (source !== 'hub1' && target !== 'hub1') {
           path.push('hub1');
         }
+        path.push(target);
         break;
       case 'bus':
         // Find shortest path on bus
@@ -548,6 +557,8 @@ export default function NetworkTopology() {
           for (let i = start + 1; i <= end; i++) {
             path.push(devices[i]);
           }
+        } else {
+          path.push(target);
         }
         break;
       case 'ring':
@@ -570,10 +581,36 @@ export default function NetworkTopology() {
               path.push(ringDevices[(sourceRingIndex - i + ringDevices.length) % ringDevices.length]);
             }
           }
+        } else {
+          path.push(target);
         }
         break;
       case 'mesh':
-        // Direct connection in mesh
+        // Direct connection in mesh - check if direct connection exists
+        const directConnection = topology.connections.find(c => 
+          (c.source === source && c.target === target) || 
+          (c.source === target && c.target === source)
+        );
+        if (directConnection) {
+          path.push(target);
+        } else {
+          // Find intermediate device
+          const intermediate = topology.devices.find(d => 
+            d.id !== source && d.id !== target && 
+            topology.connections.some(c => 
+              (c.source === source && c.target === d.id) || (c.source === d.id && c.target === source)
+            ) &&
+            topology.connections.some(c => 
+              (c.source === target && c.target === d.id) || (c.source === d.id && c.target === target)
+            )
+          );
+          if (intermediate) {
+            path.push(intermediate.id);
+            path.push(target);
+          } else {
+            path.push(target);
+          }
+        }
         break;
       case 'tree':
         // Find path through tree hierarchy
@@ -617,15 +654,25 @@ export default function NetworkTopology() {
           for (let i = commonIndex + 1; i < targetToRoot.length; i++) {
             path.push(targetToRoot[i]);
           }
+        } else {
+          path.push(target);
         }
+        break;
+      default:
+        // Default: direct connection
+        path.push(target);
         break;
     }
     
-    if (path[path.length - 1] !== target) {
-      path.push(target);
+    // Ensure we have a valid path
+    if (path.length === 0) {
+      return [source, target];
     }
     
-    return path;
+    // Remove duplicates while preserving order
+    const uniquePath = path.filter((item, index) => path.indexOf(item) === index);
+    
+    return uniquePath;
   };
 
   const stopSimulation = () => {
@@ -932,6 +979,16 @@ export default function NetworkTopology() {
               )}
               
               <div className="relative w-full h-96 border-2 border-gray-200 rounded-lg bg-gray-50 overflow-hidden">
+                {/* Simulation Status Indicator */}
+                {isSimulating && (
+                  <div className="absolute top-2 right-2 z-30">
+                    <div className="flex items-center space-x-2 bg-green-100 border border-green-300 rounded-full px-3 py-1">
+                      <div className="w-2 h-2 bg-green-500 rounded-full animate-pulse"></div>
+                      <span className="text-xs font-medium text-green-700">Simulation Active</span>
+                    </div>
+                  </div>
+                )}
+                
                 {/* Devices */}
                 {currentTopology.devices.map(device => (
                   <div
@@ -1015,14 +1072,14 @@ export default function NetworkTopology() {
                   const x = currentDevice.x + (nextDevice.x - currentDevice.x) * pathProgress;
                   const y = currentDevice.y + (nextDevice.y - currentDevice.y) * pathProgress;
                   
-                  const packetSize = packet.type === 'file' ? 8 : packet.type === 'data' ? 6 : 4;
-                  const pulseSize = packet.type === 'file' ? 12 : packet.type === 'data' ? 10 : 8;
+                  const packetSize = packet.type === 'file' ? 10 : packet.type === 'data' ? 8 : 6;
+                  const pulseSize = packet.type === 'file' ? 16 : packet.type === 'data' ? 14 : 12;
                   
                   return (
                     <div key={packet.id}>
                       {/* Packet */}
                       <div
-                        className={`absolute rounded-full shadow-lg animate-pulse ${
+                        className={`absolute rounded-full shadow-lg ${
                           packet.status === 'transmitting' ? 'animate-bounce' :
                           packet.status === 'delivered' ? 'animate-ping' : 'animate-pulse'
                         }`}
@@ -1032,8 +1089,9 @@ export default function NetworkTopology() {
                           width: packetSize,
                           height: packetSize,
                           backgroundColor: packet.color,
-                          border: `2px solid ${packet.status === 'delivered' ? '#10b981' : packet.status === 'failed' ? '#ef4444' : '#ffffff'}`,
-                          zIndex: 10
+                          border: `3px solid ${packet.status === 'delivered' ? '#10b981' : packet.status === 'failed' ? '#ef4444' : '#ffffff'}`,
+                          zIndex: 20,
+                          boxShadow: `0 0 10px ${packet.color}`
                         }}
                         title={`${packet.type.toUpperCase()}: ${packet.data}${packet.size ? ` (${packet.size}KB)` : ''}`}
                       />
@@ -1048,24 +1106,40 @@ export default function NetworkTopology() {
                             width: pulseSize,
                             height: pulseSize,
                             backgroundColor: packet.color,
-                            opacity: 0.3,
-                            zIndex: 5
+                            opacity: 0.4,
+                            zIndex: 15
                           }}
                         />
                       )}
                       
-                      {/* Packet trail for file transfers */}
+                      {/* Data flow trail for file transfers */}
                       {packet.type === 'file' && packet.progress > 0.1 && (
                         <div
-                          className="absolute rounded-full"
+                          className="absolute rounded-full animate-pulse"
+                          style={{
+                            left: x - 3,
+                            top: y - 3,
+                            width: 6,
+                            height: 6,
+                            backgroundColor: packet.color,
+                            opacity: 0.7,
+                            zIndex: 18
+                          }}
+                        />
+                      )}
+                      
+                      {/* Cable animation effect */}
+                      {packet.status === 'transmitting' && (
+                        <div
+                          className="absolute rounded-full animate-ping"
                           style={{
                             left: x - 2,
                             top: y - 2,
                             width: 4,
                             height: 4,
-                            backgroundColor: packet.color,
-                            opacity: 0.6,
-                            zIndex: 8
+                            backgroundColor: '#ffffff',
+                            opacity: 0.8,
+                            zIndex: 19
                           }}
                         />
                       )}
@@ -1073,14 +1147,14 @@ export default function NetworkTopology() {
                   );
                 })}
 
-                {/* Packet Path Visualization */}
-                {isSimulating && packets.filter(p => p.type === 'file').map(packet => {
+                {/* Enhanced Packet Path Visualization */}
+                {isSimulating && packets.filter(p => p.type === 'file' && p.status === 'transmitting').map(packet => {
                   const pathDevices = packet.path.map(id => currentTopology.devices.find(d => d.id === id)).filter(Boolean);
                   
                   if (pathDevices.length < 2) return null;
                   
                   return (
-                    <svg key={`path-${packet.id}`} className="absolute inset-0 w-full h-full pointer-events-none" style={{ zIndex: 1 }}>
+                    <svg key={`path-${packet.id}`} className="absolute inset-0 w-full h-full pointer-events-none" style={{ zIndex: 5 }}>
                       {pathDevices.slice(0, -1).map((device, index) => {
                         const nextDevice = pathDevices[index + 1];
                         if (!device || !nextDevice) return null;
@@ -1093,9 +1167,9 @@ export default function NetworkTopology() {
                             x2={nextDevice.x}
                             y2={nextDevice.y}
                             stroke={packet.color}
-                            strokeWidth="2"
-                            strokeDasharray="5,5"
-                            opacity={0.3}
+                            strokeWidth="3"
+                            strokeDasharray="8,8"
+                            opacity={0.6}
                             className="animate-pulse"
                           />
                         );
