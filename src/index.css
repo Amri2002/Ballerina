@@ -71,6 +71,33 @@ All colors MUST be HSL.
     --sidebar-border: 220 13% 91%;
 
     --sidebar-ring: 217.2 91.2% 59.8%;
+    /* DSA Module Colors */
+    --algorithm: 280 100% 70%;
+    --algorithm-foreground: 0 0% 98%;
+    --data-structure: 200 100% 60%;
+    --data-structure-foreground: 0 0% 98%;
+    --complexity: 45 100% 65%;
+    --complexity-foreground: 0 0% 10%;
+    /* Algorithm Visualization Colors */
+    --visited: 120 60% 70%;
+    --current: 0 100% 70%;
+    --path: 260 100% 80%;
+    --unvisited: 220 13% 91%;
+    /* Performance Colors */
+    --performance-excellent: 120 100% 25%;
+    --performance-good: 60 100% 35%;
+    --performance-fair: 30 100% 45%;
+    --performance-poor: 0 100% 50%;
+    /* Code Editor Theme */
+    --editor-bg: 222.2 84% 4.9%;
+    --editor-line: 217.2 32.6% 17.5%;
+    --editor-text: 210 40% 98%;
+    --editor-keyword: 200 100% 80%;
+    --editor-string: 120 100% 80%;
+    --editor-comment: 215 20.2% 65.1%;
+    /* DSA Gradients */
+    --dsa-gradient: linear-gradient(135deg, hsl(var(--algorithm)), hsl(var(--data-structure)));
+    --complexity-gradient: linear-gradient(90deg, hsl(var(--performance-excellent)), hsl(var(--performance-poor)));
   }
 
   .dark {
@@ -109,6 +136,14 @@ All colors MUST be HSL.
     --sidebar-accent-foreground: 240 4.8% 95.9%;
     --sidebar-border: 240 3.7% 15.9%;
     --sidebar-ring: 217.2 91.2% 59.8%;
+    /* DSA Dark Mode Colors */
+    --algorithm: 280 80% 60%;
+    --data-structure: 200 80% 50%;
+    --complexity: 45 80% 55%;
+    --visited: 120 50% 60%;
+    --current: 0 80% 60%;
+    --path: 260 80% 70%;
+    --unvisited: 217.2 32.6% 17.5%;
   }
 }
 
@@ -120,4 +155,55 @@ All colors MUST be HSL.
   body {
     @apply bg-background text-foreground;
   }
+}
+
+/* Custom animations for DSA visualizations */
+@keyframes bubble-sort {
+  0%, 100% { transform: translateY(0); }
+  50% { transform: translateY(-10px); }
+}
+
+@keyframes traverse {
+  0% { transform: scale(1); }
+  50% { transform: scale(1.2); }
+  100% { transform: scale(1); }
+}
+
+@keyframes highlight {
+  0%, 100% { background-color: transparent; }
+  50% { background-color: hsl(var(--current) / 0.3); }
+}
+
+.animate-bubble-sort {
+  animation: bubble-sort 0.5s ease-in-out;
+}
+
+.animate-traverse {
+  animation: traverse 0.3s ease-in-out;
+}
+
+.animate-highlight {
+  animation: highlight 1s ease-in-out infinite;
+}
+
+/* Code editor styles */
+.code-editor {
+  font-family: 'Monaco', 'Menlo', 'Ubuntu Mono', monospace;
+  font-size: 14px;
+  line-height: 1.5;
+}
+
+.code-line {
+  padding: 0 1rem;
+  min-height: 1.5rem;
+  display: flex;
+  align-items: center;
+}
+
+.code-line-number {
+  width: 3rem;
+  text-align: right;
+  padding-right: 1rem;
+  color: hsl(var(--muted-foreground));
+  user-select: none;
 }
