@@ -1,0 +1,14 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 32 32">
+  <!-- BookOpen icon -->
+  <g>
+    <rect x="4" y="8" width="10" height="16" rx="2" fill="#646cff"/>
+    <rect x="18" y="8" width="10" height="16" rx="2" fill="#61dafb"/>
+    <line x1="14" y1="8" x2="18" y2="8" stroke="#888" stroke-width="2"/>
+    <line x1="14" y1="24" x2="18" y2="24" stroke="#888" stroke-width="2"/>
+  </g>
+  <!-- Sparkles icon overlay -->
+  <g>
+    <circle cx="26" cy="6" r="2" fill="#ffd700"/>
+    <path d="M26 2 v2 M26 10 v2 M22 6 h2 M28 6 h2" stroke="#ffd700" stroke-width="1"/>
+  </g>
+</svg>

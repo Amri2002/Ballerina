@@ -11,13 +11,13 @@ import {
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
 
-const navigationItems = [
-  { name: "Home", href: "/" },
-  { name: "DSA", href: "/dsa" },
-  { name: "Networking", href: "/networking" },
-  { name: "Databases", href: "/databases" },
-  { name: "About", href: "/about" },
-];
+  const navigationItems = [
+    { name: "Home", href: "/" },
+    { name: "DSA", href: "/dsa", protected: true },
+    { name: "Networking", href: "/networking", protected: true },
+    { name: "Databases", href: "/databases", protected: true },
+    { name: "About", href: "/about" },
+  ];
 
 export function Header() {
   const [isMenuOpen, setIsMenuOpen] = useState(false);
@@ -70,29 +70,51 @@ export function Header() {
 
         {/* Desktop Navigation */}
         <nav className="hidden md:flex items-center space-x-1">
-          {navigationItems.map((item) => (
-            <Link
-              key={item.name}
-              to={item.href}
-              className={cn(
-                "px-3 py-2 text-sm font-medium rounded-md transition-colors hover:bg-accent hover:text-accent-foreground",
-                location.pathname === item.href
-                  ? "bg-accent text-accent-foreground"
-                  : "text-muted-foreground"
-              )}
-            >
-              {item.name}
-            </Link>
-          ))}
+          {navigationItems
+            .filter(item => !item.protected || isAuthenticated)
+            .map((item) => (
+              <Link
+                key={item.name}
+                to={item.href}
+                className={cn(
+                  "px-3 py-2 text-sm font-medium rounded-md transition-colors hover:bg-accent hover:text-accent-foreground",
+                  location.pathname === item.href
+                    ? "bg-accent text-accent-foreground"
+                    : "text-muted-foreground"
+                )}
+              >
+                {item.name}
+              </Link>
+            ))}
         </nav>
 
         {/* Desktop Auth Buttons */}
         <div className="hidden md:flex items-center space-x-2">
           {isAuthenticated ? (
-            <div className="flex items-center space-x-2">
+            <>
               <Link to="/dashboard">
-                <Button variant="ghost" size="sm">
+                <Button
+                  variant={location.pathname === "/dashboard" ? "secondary" : "ghost"}
+                  size="sm"
+                  className={location.pathname === "/dashboard" ? "bg-accent text-accent-foreground hover:bg-accent" : ""}
+                >
                   Dashboard
+                </Button>
+              </Link>
+              <Link to="/forum">
+                <Button variant={location.pathname === "/forum" ? "secondary" : "ghost"}
+                  size="sm"
+                  className={location.pathname === "/forum" ? "bg-accent text-accent-foreground hover:bg-accent" : ""}
+                >
+                  Forum
+                </Button>
+              </Link>
+              <Link to="/resources">
+                <Button variant={location.pathname === "/resources" ? "secondary" : "ghost"}
+                  size="sm"
+                  className={location.pathname === "/resources" ? "bg-accent text-accent-foreground hover:bg-accent" : ""}
+                >
+                  Resources
                 </Button>
               </Link>
               <DropdownMenu>
@@ -103,13 +125,19 @@ export function Header() {
                   </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent align="end">
+                  <Link to="/profile">
+                    <DropdownMenuItem>
+                      <User className="h-4 w-4 mr-2" />
+                      Profile
+                    </DropdownMenuItem>
+                  </Link>
                   <DropdownMenuItem onClick={handleLogout}>
                     <LogOut className="h-4 w-4 mr-2" />
                     Sign Out
                   </DropdownMenuItem>
                 </DropdownMenuContent>
               </DropdownMenu>
-            </div>
+            </>
           ) : (
             <>
               <Link to="/signin">
@@ -141,27 +169,36 @@ export function Header() {
       {isMenuOpen && (
         <div className="md:hidden border-t bg-background">
           <div className="container mx-auto px-4 py-4 space-y-2">
-            {navigationItems.map((item) => (
-              <Link
-                key={item.name}
-                to={item.href}
-                className={cn(
-                  "block px-3 py-2 text-sm font-medium rounded-md transition-colors",
-                  location.pathname === item.href
-                    ? "bg-accent text-accent-foreground"
-                    : "text-muted-foreground hover:bg-accent hover:text-accent-foreground"
-                )}
-                onClick={() => setIsMenuOpen(false)}
-              >
-                {item.name}
-              </Link>
-            ))}
+            {navigationItems
+              .filter(item => !item.protected || isAuthenticated)
+              .map((item) => (
+                <Link
+                  key={item.name}
+                  to={item.href}
+                  className={cn(
+                    "block px-3 py-2 text-sm font-medium rounded-md transition-colors",
+                    location.pathname === item.href
+                      ? "bg-accent text-accent-foreground"
+                      : "text-muted-foreground hover:bg-accent hover:text-accent-foreground"
+                  )}
+                  onClick={() => setIsMenuOpen(false)}
+                >
+                  {item.name}
+                </Link>
+              ))}
             <div className="pt-4 space-y-2">
               {isAuthenticated ? (
                 <>
                   <Link to="/dashboard" onClick={() => setIsMenuOpen(false)}>
                     <Button variant="ghost" size="sm" className="w-full">
+                      <BookOpen className="h-4 w-4 mr-2" />
                       Dashboard
+                    </Button>
+                  </Link>
+                  <Link to="/profile" onClick={() => setIsMenuOpen(false)}>
+                    <Button variant="ghost" size="sm" className="w-full">
+                      <User className="h-4 w-4 mr-2" />
+                      Profile
                     </Button>
                   </Link>
                   <Button 

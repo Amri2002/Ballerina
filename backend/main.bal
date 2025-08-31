@@ -1,6 +1,9 @@
 import ballerina/http;
 import backend.database as database;
 import backend.networking as networking;
+import backend.forum as forum;
+import backend.resources as resources;
+
 import ballerina/time;
 import ballerinax/mongodb;
 import ballerina/log;
@@ -82,6 +85,38 @@ function init() {
 }
 
 service /api on httpListener {
+    // Resource Library endpoints
+    resource function get resources(http:Request req) returns http:Response|error {
+        return resources:get_resources(req);
+    }
+
+    // Resource rating endpoints
+    resource function post resources/[string id]/rate(http:Request req) returns http:Response|error {
+        return resources:post_resource_rating(req, id);
+    }
+    resource function get resources/[string id]/ratings(http:Request req) returns http:Response|error {
+        return resources:get_resource_ratings(req, id);
+    }
+    // Forum endpoints
+    resource function delete forum/thread/[string id](http:Request req) returns http:Response|error {
+        return forum:delete_forum_thread(req, id, mongoClient);
+    }
+
+    resource function post forum/thread(http:Request req) returns http:Response|error {
+        return forum:post_forum_thread(req, mongoClient);
+    }
+
+    resource function get forum/threads(http:Request req) returns http:Response|error {
+        return forum:get_forum_threads(req, mongoClient);
+    }
+
+    resource function post forum/reply(http:Request req) returns http:Response|error {
+        return forum:post_forum_reply(req, mongoClient);
+    }
+
+    resource function get forum/thread/[string id](http:Request req) returns http:Response|error {
+        return forum:get_forum_thread_details(req, id, mongoClient);
+    }
 
     // Test endpoint to verify backend is working
     resource function get test() returns http:Response|error {
@@ -341,7 +376,10 @@ service /api on httpListener {
     // Temporarily commented out due to compilation issues
     // resource function post networking/topology/failure-test(http:Request req) returns http:Response|error {
     //     return networking:test_topology_failure(req, sessionStore, mongoClient);
-    // }
+
+
+
+
 
     resource function post networking/progress/update(http:Request req) returns http:Response|error {
         return networking:update_learning_progress(req, sessionStore, mongoClient);

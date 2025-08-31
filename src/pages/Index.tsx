@@ -2,6 +2,7 @@ import { Button } from "@/components/ui/button";
 import { FeatureCard } from "@/components/ui/feature-card";
 import { ModuleCard } from "@/components/ui/module-card";
 import { Header } from "@/components/Navigation/Header";
+import Forum from "./Forum";
 import { 
   BookOpen, 
   Target, 
@@ -45,14 +46,13 @@ const Index = () => {
             </p>
             
             <div className="flex flex-col sm:flex-row gap-4 justify-center items-center">
-              <Button size="lg" className="bg-white text-primary hover:bg-white/90 transition-colors shadow-lg">
-                <Play className="mr-2 h-5 w-5" />
-                Start Learning Free
+              <Button size="lg" className="bg-white text-primary hover:bg-white/90 transition-colors shadow-lg" asChild>
+                <a href="/dashboard">
+                  <Play className="mr-2 h-5 w-5" />
+                  Start Learning Free
+                </a>
               </Button>
-              <Button size="lg" variant="outline" className="border-white/20 text-white hover:bg-white/10">
-                Watch Demo
-                <ArrowRight className="ml-2 h-5 w-5" />
-              </Button>
+              
             </div>
             
             <div className="flex items-center justify-center space-x-8 text-white/60 text-sm">
@@ -97,7 +97,7 @@ const Index = () => {
               ]}
               icon={<GitBranch className="h-6 w-6" />}
               href="/dsa"
-              difficulty="Beginner"
+             
             />
             
             <ModuleCard
@@ -111,7 +111,7 @@ const Index = () => {
               ]}
               icon={<Network className="h-6 w-6" />}
               href="/networking"
-              difficulty="Intermediate"
+          
             />
             
             <ModuleCard
@@ -125,7 +125,7 @@ const Index = () => {
               ]}
               icon={<Database className="h-6 w-6" />}
               href="/databases"
-              difficulty="Intermediate"
+            
             />
           </div>
         </div>
@@ -204,9 +204,11 @@ const Index = () => {
               <span>•</span>
               <span>50+ interactive modules</span>
             </div>
-            <Button size="lg" className="bg-hero-gradient hover:opacity-90 transition-opacity shadow-lg">
-              <Play className="mr-2 h-5 w-5" />
-              Start Your Journey Today
+            <Button size="lg" className="bg-hero-gradient hover:opacity-90 transition-opacity shadow-lg" asChild>
+              <a href="/dashboard">
+                <Play className="mr-2 h-5 w-5" />
+                Start Your Journey Today
+              </a>
             </Button>
           </div>
         </div>

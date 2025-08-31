@@ -5,6 +5,7 @@ import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { AuthProvider, useAuth } from "./contexts/AuthContext";
 import Index from "./pages/Index";
+import Forum from "./pages/Forum";
 import DSA from "./pages/DSA";
 import Networking from "./pages/Networking";
 import Databases from "./pages/Databases";
@@ -13,12 +14,15 @@ import SignIn from "./pages/SignIn";
 import SignUp from "./pages/SignUp";
 import Dashboard from "./pages/Dashboard";
 import NotFound from "./pages/NotFound";
+import Profile from "./pages/Profile";
+import ResourceLibraryPage from "./pages/ResourceLibrary";
 
 const queryClient = new QueryClient();
 
 // Protected Route Component
 const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
-  const { isAuthenticated } = useAuth();
+  const { isAuthenticated, loading } = useAuth();
+  if (loading) return null; // Or show a spinner
   return isAuthenticated ? <>{children}</> : <Navigate to="/signin" replace />;
 };
 
@@ -37,9 +41,21 @@ const App = () => (
         <BrowserRouter>
           <Routes>
             <Route path="/" element={<Index />} />
-            <Route path="/dsa" element={<DSA />} />
-            <Route path="/networking" element={<Networking />} />
-            <Route path="/databases" element={<Databases />} />
+            <Route path="/dsa" element={
+              <ProtectedRoute>
+                <DSA />
+              </ProtectedRoute>
+            } />
+            <Route path="/networking" element={
+              <ProtectedRoute>
+                <Networking />
+              </ProtectedRoute>
+            } />
+            <Route path="/databases" element={
+              <ProtectedRoute>
+                <Databases />
+              </ProtectedRoute>
+            } />
             <Route path="/about" element={<About />} />
             <Route path="/signin" element={
               <PublicRoute>
@@ -54,6 +70,17 @@ const App = () => (
             <Route path="/dashboard" element={
               <ProtectedRoute>
                 <Dashboard />
+              </ProtectedRoute>
+            } />
+            <Route path="/profile" element={
+              <ProtectedRoute>
+                <Profile />
+              </ProtectedRoute>
+            } />
+            <Route path="/forum" element={<Forum />} />
+            <Route path="/resources" element={
+              <ProtectedRoute>
+                <ResourceLibraryPage />
               </ProtectedRoute>
             } />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}

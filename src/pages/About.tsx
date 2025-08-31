@@ -189,9 +189,11 @@ export default function About() {
               </div>
             </div>
             
-            <Button size="lg" className="bg-hero-gradient hover:opacity-90 transition-opacity">
-              Start Learning Today
-              <ArrowRight className="ml-2 h-5 w-5" />
+            <Button size="lg" className="bg-hero-gradient hover:opacity-90 transition-opacity" asChild>
+              <a href="/dashboard">
+                Start Learning Today
+                <ArrowRight className="ml-2 h-5 w-5" />
+              </a>
             </Button>
           </div>
         </div>
