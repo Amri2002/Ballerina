@@ -6,7 +6,7 @@
   "type": "module",
   "scripts": {
   "start": "node working-cors-proxy.js",
-  "dev": "start node working-cors-proxy.js && start node progress-microservice.cjs && start node resource-rating-microservice.cjs",
+  "dev": "start node working-cors-proxy.js && start node progress-microservice.cjs && start node resource-rating-microservice.cjs && start node update-dsa-progress.cjs",
   "bal:run": "bal run src/main.bal",
   "bal:build": "bal build",
   "start:all": "start bal:run && start dev"

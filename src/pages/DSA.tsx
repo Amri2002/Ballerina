@@ -24,7 +24,7 @@ import {
   Code2,
   Network
 } from "lucide-react";
-import { progressService } from "@/services/progressService";
+import { dsaService } from "@/services/dsaService";
 
 const dsaTopics = [
   {
@@ -110,7 +110,7 @@ export default function DSA() {
   useEffect(() => {
     const fetchProgress = async () => {
       try {
-        const progress = await progressService.getUserProgress();
+        const progress = await dsaService.getUserProgress();
         setCompletedModules(progress.completedModules);
       } catch (error) {
         console.error('Failed to fetch progress:', error);
@@ -118,7 +118,6 @@ export default function DSA() {
         setLoading(false);
       }
     };
-
     fetchProgress();
   }, []);
 
@@ -166,7 +165,7 @@ export default function DSA() {
               setActiveView('overview');
               setSelectedModule(null);
               // Refresh progress after completion
-              progressService.getUserProgress()
+              dsaService.getUserProgress()
                 .then(progress => setCompletedModules(progress.completedModules))
                 .catch(console.error);
             }}
@@ -305,14 +304,15 @@ export default function DSA() {
                         <div className="flex items-center space-x-3">
                           <div className={`w-10 h-10 rounded-lg flex items-center justify-center ${
                             topic.completed 
-                              ? 'bg-success/10 text-success' 
+                              ? 'bg-green-100 text-green-600' 
                               : 'bg-primary/10 text-primary group-hover:bg-primary group-hover:text-primary-foreground'
                           } transition-colors`}>
-                            {topic.completed ? <Check className="h-5 w-5" /> : topic.icon}
+                            {topic.completed ? <Check className="h-5 w-5 text-green-600" /> : topic.icon}
                           </div>
                           <div>
-                            <CardTitle className="text-lg font-semibold">
+                            <CardTitle className="text-lg font-semibold flex items-center gap-2">
                               {topic.title}
+
                             </CardTitle>
                             <CardDescription className="text-muted-foreground">
                               {topic.description}
@@ -331,7 +331,7 @@ export default function DSA() {
                             {topic.complexity}
                           </Badge>
                           {topic.completed && (
-                            <Badge variant="secondary" className="bg-success/10 text-success">
+                            <Badge variant="secondary" className="bg-green-100 text-green-800">
                               Completed
                             </Badge>
                           )}

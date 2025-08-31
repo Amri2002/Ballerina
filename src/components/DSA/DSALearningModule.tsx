@@ -4,7 +4,7 @@ import { Card, CardContent, CardDescription, CardHeader, CardTitle } from "@/com
 import { Badge } from "@/components/ui/badge";
 import { Progress } from "@/components/ui/progress";
 import { Tabs, TabsContent, TabsList, TabsTrigger } from "@/components/ui/tabs";
-import { progressService } from "@/services/progressService";
+import { dsaService } from "@/services/dsaService";
 import { 
   CheckCircle, 
   Play, 
@@ -1890,7 +1890,22 @@ export function DSALearningModule({ moduleId, onComplete }: Props) {
   const [moduleCompleted, setModuleCompleted] = useState(false);
 
   const module = DSA_MODULES[moduleId];
-  
+
+  useEffect(() => {
+    // Check if module is already completed
+    const checkModuleCompletion = async () => {
+      try {
+        const progress = await dsaService.getUserProgress();
+        if (progress.completedModules.includes(moduleId)) {
+          setModuleCompleted(true);
+        }
+      } catch (error) {
+        console.error('Failed to check module completion:', error);
+      }
+    };
+    checkModuleCompletion();
+  }, [moduleId]);
+
   if (!module) {
     return (
       <Card>
@@ -1906,11 +1921,10 @@ export function DSALearningModule({ moduleId, onComplete }: Props) {
 
   const handleQuizSubmit = () => {
     setShowQuizResults(true);
-    const correctAnswers = quizAnswers.filter((answer, index) => 
+    const correctAnswers = quizAnswers.filter((answer, index) =>
       answer === module.quiz[index].correctAnswer
     ).length;
-    
-    if (correctAnswers >= module.quiz.length * 0.7) { // 70% pass rate
+    if (correctAnswers >= module.quiz.length * 0.7) {
       setModuleCompleted(true);
     }
   };
@@ -1918,11 +1932,10 @@ export function DSALearningModule({ moduleId, onComplete }: Props) {
   // Complete module and save progress
   const handleComplete = async () => {
     try {
-      await progressService.markModuleCompleted(moduleId);
+      await dsaService.markModuleCompleted(moduleId);
       onComplete();
     } catch (error) {
       console.error('Failed to save completion:', error);
-      // Still complete locally even if save fails
       onComplete();
     }
   };
@@ -1974,7 +1987,6 @@ export function DSALearningModule({ moduleId, onComplete }: Props) {
                   {module.lessons[currentLesson]?.content}
                 </div>
               </div>
-              
               {module.lessons[currentLesson]?.codeExample && (
                 <Card>
                   <CardHeader>
@@ -1990,21 +2002,18 @@ export function DSALearningModule({ moduleId, onComplete }: Props) {
                   </CardContent>
                 </Card>
               )}
-              
               <div className="flex items-center justify-between pt-4">
-                <Button 
-                  variant="outline" 
+                <Button
+                  variant="outline"
                   onClick={() => setCurrentLesson(Math.max(0, currentLesson - 1))}
                   disabled={currentLesson === 0}
                 >
                   Previous
                 </Button>
-                
                 <span className="text-sm text-muted-foreground">
                   Lesson {currentLesson + 1} of {module.lessons.length}
                 </span>
-                
-                <Button 
+                <Button
                   onClick={() => setCurrentLesson(Math.min(module.lessons.length - 1, currentLesson + 1))}
                   disabled={currentLesson === module.lessons.length - 1}
                   style={{ background: 'hsl(var(--algorithm))', color: 'hsl(var(--algorithm-foreground))' }}
@@ -2057,7 +2066,6 @@ export function DSALearningModule({ moduleId, onComplete }: Props) {
                         <span>{option}</span>
                       </label>
                     ))}
-                    
                     {showQuizResults && (
                       <div className={`mt-4 p-3 rounded ${
                         quizAnswers[questionIndex] === question.correctAnswer
@@ -2074,9 +2082,8 @@ export function DSALearningModule({ moduleId, onComplete }: Props) {
                   </CardContent>
                 </Card>
               ))}
-              
               {!showQuizResults ? (
-                <Button 
+                <Button
                   onClick={handleQuizSubmit}
                   disabled={quizAnswers.length !== module.quiz.length}
                   style={{ background: 'hsl(var(--algorithm))', color: 'hsl(var(--algorithm-foreground))' }}
@@ -2088,14 +2095,13 @@ export function DSALearningModule({ moduleId, onComplete }: Props) {
                 <div className="space-y-4">
                   <div className="text-center">
                     <Badge variant="outline" className="text-lg px-4 py-2">
-                      Score: {quizAnswers.filter((answer, index) => 
+                      Score: {quizAnswers.filter((answer, index) =>
                         answer === module.quiz[index].correctAnswer
                       ).length} / {module.quiz.length}
                     </Badge>
                   </div>
-                  
                   {moduleCompleted && (
-                    <Button 
+                    <Button
                       onClick={handleComplete}
                       style={{ background: 'hsl(var(--performance-excellent))', color: 'hsl(var(--performance-excellent-foreground))' }}
                       className="w-full hover:brightness-110"
@@ -2132,8 +2138,8 @@ export function DSALearningModule({ moduleId, onComplete }: Props) {
                       </div>
                       <span>{problem}</span>
                     </div>
-                    <Button 
-                      variant="outline" 
+                    <Button
+                      variant="outline"
                       size="sm"
                       style={{ background: 'hsl(var(--algorithm))', color: 'hsl(var(--algorithm-foreground))' }}
                       className="hover:brightness-110"
