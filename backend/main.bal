@@ -1,6 +1,7 @@
 import ballerina/http;
 import backend.database as database;
 import backend.networking as networking;
+import backend.resources as resources;
 import backend.forum as forum;
 import ballerina/time;
 import ballerinax/mongodb;
@@ -83,6 +84,18 @@ function init() {
 }
 
 service /api on httpListener {
+    // Resource Library endpoints
+    resource function get resources(http:Request req) returns http:Response|error {
+        return resources:get_resources(req);
+    }
+
+    // Resource rating endpoints
+    resource function post resources/[string id]/rate(http:Request req) returns http:Response|error {
+        return resources:post_resource_rating(req, id);
+    }
+    resource function get resources/[string id]/ratings(http:Request req) returns http:Response|error {
+        return resources:get_resource_ratings(req, id);
+    }
     // Forum endpoints
     resource function delete forum/thread/[string id](http:Request req) returns http:Response|error {
         return forum:delete_forum_thread(req, id, mongoClient);

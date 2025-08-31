@@ -15,12 +15,14 @@ import SignUp from "./pages/SignUp";
 import Dashboard from "./pages/Dashboard";
 import NotFound from "./pages/NotFound";
 import Profile from "./pages/Profile";
+import ResourceLibraryPage from "./pages/ResourceLibrary";
 
 const queryClient = new QueryClient();
 
 // Protected Route Component
 const ProtectedRoute = ({ children }: { children: React.ReactNode }) => {
-  const { isAuthenticated } = useAuth();
+  const { isAuthenticated, loading } = useAuth();
+  if (loading) return null; // Or show a spinner
   return isAuthenticated ? <>{children}</> : <Navigate to="/signin" replace />;
 };
 
@@ -76,6 +78,11 @@ const App = () => (
               </ProtectedRoute>
             } />
             <Route path="/forum" element={<Forum />} />
+            <Route path="/resources" element={
+              <ProtectedRoute>
+                <ResourceLibraryPage />
+              </ProtectedRoute>
+            } />
             {/* ADD ALL CUSTOM ROUTES ABOVE THE CATCH-ALL "*" ROUTE */}
             <Route path="*" element={<NotFound />} />
           </Routes>

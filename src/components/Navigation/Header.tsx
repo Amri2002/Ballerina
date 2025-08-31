@@ -109,6 +109,14 @@ export function Header() {
                   Forum
                 </Button>
               </Link>
+              <Link to="/resources">
+                <Button variant={location.pathname === "/resources" ? "secondary" : "ghost"}
+                  size="sm"
+                  className={location.pathname === "/resources" ? "bg-accent text-accent-foreground hover:bg-accent" : ""}
+                >
+                  Resources
+                </Button>
+              </Link>
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
                   <Button variant="ghost" size="sm" className="flex items-center space-x-2">
