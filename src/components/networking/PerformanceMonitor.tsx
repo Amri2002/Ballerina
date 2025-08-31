@@ -87,6 +87,7 @@ const PerformanceMonitor: React.FC = () => {
         latency: Math.random() * 200 + 10,
         bandwidth: Math.random() * 1000 + 100,
         packetLoss: Math.random() * 5,
+        jitter: Math.random() * 10,
         cpuUsage: Math.random() * 100,
         memoryUsage: Math.random() * 100,
         activeConnections: Math.floor(Math.random() * 1000) + 100,
