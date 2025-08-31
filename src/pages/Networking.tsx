@@ -30,6 +30,9 @@ import ProtocolAnalyzer from "@/components/networking/ProtocolAnalyzer";
 import NetworkSecurityScanner from "@/components/networking/NetworkSecurityScanner";
 import PerformanceMonitor from "@/components/networking/PerformanceMonitor";
 import LearningAnalytics from "@/components/networking/LearningAnalytics";
+import NetworkingChallengesCard from "@/components/networking/NetworkingChallengesCard";
+import NetworkingChallenges from "@/components/networking/NetworkingChallenges";
+import InteractiveChallenges from "@/components/networking/InteractiveChallenges";
 
 // Check for duplicates in the array
 const allTopics = [
@@ -227,11 +230,13 @@ export default function Networking() {
       <section className="py-16">
         <div className="container mx-auto px-4">
           <Tabs value={activeTab} onValueChange={setActiveTab} className="max-w-6xl mx-auto">
-            <TabsList className="grid w-full grid-cols-4">
+            <TabsList className="grid w-full grid-cols-6">
               <TabsTrigger value="all">All Topics</TabsTrigger>
               <TabsTrigger value="protocols">Protocols</TabsTrigger>
               <TabsTrigger value="tools">Tools & Analysis</TabsTrigger>
               <TabsTrigger value="analytics">Analytics</TabsTrigger>
+              <TabsTrigger value="challenges">Challenges</TabsTrigger>
+              <TabsTrigger value="interactive">Interactive</TabsTrigger>
             </TabsList>
             
             <TabsContent value="all" className="mt-8">
@@ -284,6 +289,8 @@ export default function Networking() {
                     </div>
                   </CardContent>
                 </Card>
+                
+                <NetworkingChallengesCard onViewChallenges={() => setActiveTab("challenges")} />
                 
                 <Card>
                   <CardHeader>
@@ -388,14 +395,14 @@ export default function Networking() {
                     <CardContent>
                       <div className="flex items-center justify-between">
                         <div className="text-sm text-muted-foreground">
-                          Protocol Module {index + 1}
+                          Protocol {index + 1} of {protocolTopics.length}
                         </div>
                         <Button 
                           className="bg-hero-gradient hover:opacity-90 transition-opacity"
                           onClick={() => setSelectedTopic(topic.id)}
                         >
                           <Play className="mr-2 h-4 w-4" />
-                          Start Simulation
+                          Learn Protocol
                           <ArrowRight className="ml-2 h-4 w-4" />
                         </Button>
                       </div>
@@ -505,6 +512,14 @@ export default function Networking() {
                   </Card>
                 ))}
               </div>
+            </TabsContent>
+
+            <TabsContent value="challenges" className="mt-8">
+              <NetworkingChallenges />
+            </TabsContent>
+
+            <TabsContent value="interactive" className="mt-8">
+              <InteractiveChallenges />
             </TabsContent>
           </Tabs>
         </div>

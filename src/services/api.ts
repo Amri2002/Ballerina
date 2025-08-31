@@ -44,9 +44,13 @@ class ApiService {
   ): Promise<T> {
     const url = `${this.baseUrl}${endpoint}`;
     
+    // Get token from localStorage for authentication
+    const token = localStorage.getItem('auth_token');
+    
     const config: RequestInit = {
       headers: {
         'Content-Type': 'application/json',
+        ...(token && { Authorization: `Bearer ${token}` }),
         ...options.headers,
       },
       ...options,
@@ -90,6 +94,11 @@ class ApiService {
         Authorization: `Bearer ${token}`,
       },
     });
+  }
+
+  // Public method for making generic requests
+  async makeRequest<T>(endpoint: string, options: RequestInit = {}): Promise<T> {
+    return this.request<T>(endpoint, options);
   }
 }
 

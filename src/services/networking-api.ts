@@ -69,7 +69,7 @@ export interface ExerciseResult {
 export const networkingApi = {
   // TCP Handshake
   saveTCPHandshake: async (data: TCPHandshakeData) => {
-    return apiService.request('/networking/tcp/handshake', {
+    return apiService.makeRequest('/networking/tcp/handshake', {
       method: 'POST',
       body: JSON.stringify(data),
     });
@@ -77,7 +77,7 @@ export const networkingApi = {
 
   // DNS Resolution
   saveDNSResolution: async (data: DNSResolutionData) => {
-    return apiService.request('/networking/dns/resolution', {
+    return apiService.makeRequest('/networking/dns/resolution', {
       method: 'POST',
       body: JSON.stringify(data),
     });
@@ -85,7 +85,7 @@ export const networkingApi = {
 
   // Subnet Calculator
   calculateSubnet: async (data: SubnetCalculationData) => {
-    return apiService.request('/networking/subnet/calculate', {
+    return apiService.makeRequest('/networking/subnet/calculate', {
       method: 'POST',
       body: JSON.stringify(data),
     });
@@ -93,20 +93,20 @@ export const networkingApi = {
 
   // Network Topology
   saveTopology: async (data: NetworkTopologyData) => {
-    return apiService.request('/networking/topology/save', {
+    return apiService.makeRequest('/networking/topology/save', {
       method: 'POST',
       body: JSON.stringify(data),
     });
   },
 
   getTopologies: async (userId: string) => {
-    return apiService.request(`/networking/topology/list?userId=${userId}`, {
+    return apiService.makeRequest(`/networking/topology/list?userId=${userId}`, {
       method: 'GET',
     });
   },
 
   getTopologyTypes: async () => {
-    return apiService.request('/networking/topology/types', {
+    return apiService.makeRequest('/networking/topology/types', {
       method: 'GET',
     });
   },
@@ -116,7 +116,7 @@ export const networkingApi = {
     simulationConfig?: any;
     userId: string;
   }) => {
-    return apiService.request('/networking/topology/simulate', {
+    return apiService.makeRequest('/networking/topology/simulate', {
       method: 'POST',
       body: JSON.stringify(data),
     });
@@ -128,7 +128,7 @@ export const networkingApi = {
     devicesToFail?: string[];
     userId: string;
   }) => {
-    return apiService.request('/networking/topology/failure-test', {
+    return apiService.makeRequest('/networking/topology/failure-test', {
       method: 'POST',
       body: JSON.stringify(data),
     });
@@ -136,21 +136,21 @@ export const networkingApi = {
 
   // User Progress
   updateProgress: async (data: UserProgressData) => {
-    return apiService.request('/networking/progress/update', {
+    return apiService.makeRequest('/networking/progress/update', {
       method: 'POST',
       body: JSON.stringify(data),
     });
   },
 
   getUserProgress: async (userId: string) => {
-    return apiService.request(`/networking/progress/user/${userId}`, {
+    return apiService.makeRequest(`/networking/progress/user?userId=${userId}`, {
       method: 'GET',
     });
   },
 
   // Exercise Results
   submitExercise: async (data: ExerciseResult) => {
-    return apiService.request('/networking/exercises/submit', {
+    return apiService.makeRequest('/networking/exercises/submit', {
       method: 'POST',
       body: JSON.stringify(data),
     });
@@ -158,13 +158,13 @@ export const networkingApi = {
 
   // Module Information
   getNetworkingStatus: async () => {
-    return apiService.request('/networking/status', {
+    return apiService.makeRequest('/networking/status', {
       method: 'GET',
     });
   },
 
   getNetworkingModules: async () => {
-    return apiService.request('/networking/modules', {
+    return apiService.makeRequest('/networking/modules', {
       method: 'GET',
     });
   }
