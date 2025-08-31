@@ -1,8 +1,9 @@
 import ballerina/http;
 import backend.database as database;
 import backend.networking as networking;
-import backend.resources as resources;
 import backend.forum as forum;
+import backend.resources as resources;
+
 import ballerina/time;
 import ballerinax/mongodb;
 import ballerina/log;
@@ -370,7 +371,10 @@ service /api on httpListener {
     // Temporarily commented out due to compilation issues
     // resource function post networking/topology/failure-test(http:Request req) returns http:Response|error {
     //     return networking:test_topology_failure(req, sessionStore, mongoClient);
-    // }
+
+
+
+
 
     resource function post networking/progress/update(http:Request req) returns http:Response|error {
         return networking:update_learning_progress(req, sessionStore, mongoClient);
