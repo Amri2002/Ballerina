@@ -7,13 +7,16 @@ const uri = 'mongodb+srv://mohamedashrif325:rqpBqU7bpqO72qkO@cluster0.3591lxr.mo
 const client = new MongoClient(uri);
 
 // DSA progress update endpoint
+
 app.post('/update-dsa-progress', async (req, res) => {
     const { userId, completedModules } = req.body;
     if (!userId || !Array.isArray(completedModules)) {
-        return res.status(400).json({ error: 'Missing userId or completedModules' });
+        return res.status(400).json({ error: 'Missing userId or completedModules', success: false });
     }
     try {
-        await client.connect();
+        if (!client.topology || !client.topology.isConnected()) {
+            await client.connect();
+        }
         const db = client.db('learning_platform');
         const collection = db.collection('dsa_user_progress');
         const result = await collection.updateOne(
@@ -21,14 +24,16 @@ app.post('/update-dsa-progress', async (req, res) => {
             { $set: { completedModules, lastUpdated: new Date().toISOString() } },
             { upsert: true }
         );
-        res.json({ matchedCount: result.matchedCount, modifiedCount: result.modifiedCount, upsertedId: result.upsertedId });
+        res.json({ success: true, matchedCount: result.matchedCount, modifiedCount: result.modifiedCount, upsertedId: result.upsertedId });
     } catch (err) {
-        res.status(500).json({ error: err.message });
-    } finally {
-        await client.close();
+        res.status(500).json({ error: err.message, success: false });
     }
 });
 
-app.listen(4001, () => {
-    console.log('DSA Progress microservice running on port 4001');
+app.use((req, res) => {
+    res.status(404).json({ error: 'Not found', success: false });
+});
+
+app.listen(4003, () => {
+    console.log('DSA Progress microservice running on port 4003');
 });

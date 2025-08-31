@@ -8,7 +8,7 @@ export const dsaService = {
   async getUserProgress() {
     try {
       const token = authService.getToken();
-      const res = await axios.get(`${API_BASE}/user/progress`, {
+      const res = await axios.get(`${API_BASE}/dsa/progress`, {
         headers: {
           Authorization: token ? `Bearer ${token}` : ''
         }
@@ -24,7 +24,7 @@ export const dsaService = {
   async markModuleCompleted(moduleId: string) {
     try {
       const token = authService.getToken();
-      await axios.post(`${API_BASE}/user_progress_mark_completed`, { moduleId }, {
+      await axios.post(`${API_BASE}/dsa_progress_mark_completed`, { moduleId }, {
         headers: {
           Authorization: token ? `Bearer ${token}` : ''
         }

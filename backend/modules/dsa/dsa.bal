@@ -80,7 +80,7 @@ public function dsa_progress_mark_completed(http:Request req, map<map<anydata>> 
 				}
 			}
 			// Workaround: Use Express microservice for DSA progress update
-			http:Client|error clientOrError = new("http://localhost:4001");
+			http:Client|error clientOrError = new("http://localhost:4003");
 			if (clientOrError is http:Client) {
 				json dsaPayload = {"userId": userId, "completedModules": completedModules, "dsa": true};
 				http:Response|error respOrError = clientOrError->post("/update-dsa-progress", dsaPayload);
