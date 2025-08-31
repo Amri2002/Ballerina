@@ -94,7 +94,8 @@ app.post('/api/networking/tcp/handshake', async (req, res) => {
         const response = await fetch(targetUrl, {
             method: 'POST',
             headers: {
-                'Content-Type': 'application/json'
+                'Content-Type': 'application/json',
+                ...(req.headers.authorization && { 'Authorization': req.headers.authorization })
             },
             body: JSON.stringify(req.body)
         });
@@ -117,7 +118,8 @@ app.post('/api/networking/dns/resolution', async (req, res) => {
         const response = await fetch(targetUrl, {
             method: 'POST',
             headers: {
-                'Content-Type': 'application/json'
+                'Content-Type': 'application/json',
+                ...(req.headers.authorization && { 'Authorization': req.headers.authorization })
             },
             body: JSON.stringify(req.body)
         });
@@ -140,7 +142,8 @@ app.post('/api/networking/subnet/calculate', async (req, res) => {
         const response = await fetch(targetUrl, {
             method: 'POST',
             headers: {
-                'Content-Type': 'application/json'
+                'Content-Type': 'application/json',
+                ...(req.headers.authorization && { 'Authorization': req.headers.authorization })
             },
             body: JSON.stringify(req.body)
         });
@@ -163,7 +166,8 @@ app.post('/api/networking/topology/save', async (req, res) => {
         const response = await fetch(targetUrl, {
             method: 'POST',
             headers: {
-                'Content-Type': 'application/json'
+                'Content-Type': 'application/json',
+                ...(req.headers.authorization && { 'Authorization': req.headers.authorization })
             },
             body: JSON.stringify(req.body)
         });
@@ -186,7 +190,8 @@ app.get('/api/networking/topology/list/:userId', async (req, res) => {
         const response = await fetch(targetUrl, {
             method: 'GET',
             headers: {
-                'Content-Type': 'application/json'
+                'Content-Type': 'application/json',
+                ...(req.headers.authorization && { 'Authorization': req.headers.authorization })
             }
         });
         
@@ -208,7 +213,8 @@ app.post('/api/networking/progress/update', async (req, res) => {
         const response = await fetch(targetUrl, {
             method: 'POST',
             headers: {
-                'Content-Type': 'application/json'
+                'Content-Type': 'application/json',
+                ...(req.headers.authorization && { 'Authorization': req.headers.authorization })
             },
             body: JSON.stringify(req.body)
         });
@@ -232,7 +238,8 @@ app.post('/api/networking/protocol/analyze', async (req, res) => {
         const response = await fetch(targetUrl, {
             method: 'POST',
             headers: {
-                'Content-Type': 'application/json'
+                'Content-Type': 'application/json',
+                ...(req.headers.authorization && { 'Authorization': req.headers.authorization })
             },
             body: JSON.stringify(req.body)
         });
@@ -255,7 +262,8 @@ app.post('/api/networking/performance/monitor', async (req, res) => {
         const response = await fetch(targetUrl, {
             method: 'POST',
             headers: {
-                'Content-Type': 'application/json'
+                'Content-Type': 'application/json',
+                ...(req.headers.authorization && { 'Authorization': req.headers.authorization })
             },
             body: JSON.stringify(req.body)
         });
@@ -278,7 +286,8 @@ app.get('/api/networking/analytics/user/:userId', async (req, res) => {
         const response = await fetch(targetUrl, {
             method: 'GET',
             headers: {
-                'Content-Type': 'application/json'
+                'Content-Type': 'application/json',
+                ...(req.headers.authorization && { 'Authorization': req.headers.authorization })
             }
         });
         
@@ -300,7 +309,8 @@ app.get('/api/networking/status', async (req, res) => {
         const response = await fetch(targetUrl, {
             method: 'GET',
             headers: {
-                'Content-Type': 'application/json'
+                'Content-Type': 'application/json',
+                ...(req.headers.authorization && { 'Authorization': req.headers.authorization })
             }
         });
         
@@ -322,7 +332,8 @@ app.get('/api/networking/modules', async (req, res) => {
         const response = await fetch(targetUrl, {
             method: 'GET',
             headers: {
-                'Content-Type': 'application/json'
+                'Content-Type': 'application/json',
+                ...(req.headers.authorization && { 'Authorization': req.headers.authorization })
             }
         });
         

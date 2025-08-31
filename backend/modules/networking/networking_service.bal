@@ -283,11 +283,11 @@ function getIPClass(int firstOctet) returns string {
 }
 
 // Initialize MongoDB indexes for networking collections
-public function createNetworkingIndexes(mongodb:Client mongoClient) {
+public function createNetworkingIndexes(mongodb:Client mongoClient) returns error? {
     mongodb:Database|error dbResult = mongoClient->getDatabase("learning_platform");
     if (dbResult is error) {
         log:printError("Failed to connect to database for networking indexing: " + dbResult.message());
-        return;
+        return dbResult;
     }
     
     mongodb:Database db = dbResult;
@@ -313,6 +313,7 @@ public function createNetworkingIndexes(mongodb:Client mongoClient) {
             log:printInfo("Successfully created index on " + collectionName + " collection");
         }
     }
+    return ();
 }
 
 // TCP Handshake: Save session data
@@ -321,7 +322,7 @@ public function save_tcp_handshake(http:Request req, map<map<anydata>> sessionSt
     if (authHeader is string && authHeader.startsWith("Bearer ")) {
         string token = authHeader.substring(7, authHeader.length());
         map<anydata>? userMapOpt = sessionStore[token];
-        if userMapOpt is map<anydata> {
+        if (userMapOpt is map<anydata>) {
             string userId = <string>userMapOpt["id"];
             json|error payloadOrError = req.getJsonPayload();
             if (payloadOrError is error) {
@@ -439,7 +440,7 @@ public function save_dns_resolution(http:Request req, map<map<anydata>> sessionS
     if (authHeader is string && authHeader.startsWith("Bearer ")) {
         string token = authHeader.substring(7, authHeader.length());
         map<anydata>? userMapOpt = sessionStore[token];
-        if userMapOpt is map<anydata> {
+        if (userMapOpt is map<anydata>) {
             string userId = <string>userMapOpt["id"];
             json|error payloadOrError = req.getJsonPayload();
             if (payloadOrError is error) {
@@ -514,7 +515,7 @@ public function save_subnet_calculation(http:Request req, map<map<anydata>> sess
     if (authHeader is string && authHeader.startsWith("Bearer ")) {
         string token = authHeader.substring(7, authHeader.length());
         map<anydata>? userMapOpt = sessionStore[token];
-        if userMapOpt is map<anydata> {
+        if (userMapOpt is map<anydata>) {
             string userId = <string>userMapOpt["id"];
             json|error payloadOrError = req.getJsonPayload();
             if (payloadOrError is error) {
@@ -596,7 +597,7 @@ public function save_network_topology(http:Request req, map<map<anydata>> sessio
     if (authHeader is string && authHeader.startsWith("Bearer ")) {
         string token = authHeader.substring(7, authHeader.length());
         map<anydata>? userMapOpt = sessionStore[token];
-        if userMapOpt is map<anydata> {
+        if (userMapOpt is map<anydata>) {
             string userId = <string>userMapOpt["id"];
             json|error payloadOrError = req.getJsonPayload();
             if (payloadOrError is error) {
@@ -673,7 +674,7 @@ public function get_network_topologies(http:Request req, map<map<anydata>> sessi
     if (authHeader is string && authHeader.startsWith("Bearer ")) {
         string token = authHeader.substring(7, authHeader.length());
         map<anydata>? userMapOpt = sessionStore[token];
-        if userMapOpt is map<anydata> {
+        if (userMapOpt is map<anydata>) {
             string userId = <string>userMapOpt["id"];
             
             mongodb:Database|error dbResult = mongoClient->getDatabase("learning_platform");
@@ -734,7 +735,7 @@ public function simulate_topology(http:Request req, map<map<anydata>> sessionSto
     if (authHeader is string && authHeader.startsWith("Bearer ")) {
         string token = authHeader.substring(7, authHeader.length());
         map<anydata>? userMapOpt = sessionStore[token];
-        if userMapOpt is map<anydata> {
+        if (userMapOpt is map<anydata>) {
             string userId = <string>userMapOpt["id"];
             json|error payloadOrError = req.getJsonPayload();
             if (payloadOrError is error) {
@@ -791,7 +792,7 @@ public function test_topology_failure(http:Request req, map<map<anydata>> sessio
     if (authHeader is string && authHeader.startsWith("Bearer ")) {
         string token = authHeader.substring(7, authHeader.length());
         map<anydata>? userMapOpt = sessionStore[token];
-        if userMapOpt is map<anydata> {
+        if (userMapOpt is map<anydata>) {
             string userId = <string>userMapOpt["id"];
             json|error payloadOrError = req.getJsonPayload();
             if (payloadOrError is error) {
@@ -849,54 +850,32 @@ public function update_learning_progress(http:Request req, map<map<anydata>> ses
     string|http:HeaderNotFoundError authHeader = req.getHeader("Authorization");
     if (authHeader is string && authHeader.startsWith("Bearer ")) {
         string token = authHeader.substring(7, authHeader.length());
+        
+        // Declare userId at function level
+        string userId = "";
+        
+        // First check in-memory session store
         map<anydata>? userMapOpt = sessionStore[token];
-        if userMapOpt is map<anydata> {
-            string userId = <string>userMapOpt["id"];
-            json|error payloadOrError = req.getJsonPayload();
-            if (payloadOrError is error) {
-                return createResponse(400, "Invalid JSON payload", "Invalid JSON");
-            }
-
-            json payload = payloadOrError;
-            string module = "";
-            string topic = "";
-            int progress = 0;
-            
-            // Extract fields safely
-            json|error moduleField = payload.module;
-            if (moduleField is string) {
-                module = moduleField;
-            }
-            json|error topicField = payload.topic;
-            if (topicField is string) {
-                topic = topicField;
-            }
-            json|error progressField = payload.progress;
-            if (progressField is int) {
-                progress = progressField;
-            }
-
-            if (module == "" || topic == "") {
-                return createResponse(400, "Missing required fields", "module and topic are required");
-            }
-
-            // Update or create progress record
+        if (userMapOpt is map<anydata>) {
+            userId = <string>userMapOpt["id"];
+        } else {
+            // If not in memory, check MongoDB sessions collection
             mongodb:Database|error dbResult = mongoClient->getDatabase("learning_platform");
             if (dbResult is error) {
                 return createResponse(500, "Database connection failed", dbResult.message());
             }
             
             mongodb:Database db = dbResult;
-            mongodb:Collection|error collectionResult = db->getCollection("learning_progress");
-            if (collectionResult is error) {
-                return createResponse(500, "Collection access failed", collectionResult.message());
+            mongodb:Collection|error sessionCollectionResult = db->getCollection("user_sessions");
+            if (sessionCollectionResult is error) {
+                return createResponse(500, "Collection access failed", sessionCollectionResult.message());
             }
             
-            mongodb:Collection progressCollection = collectionResult;
+            mongodb:Collection sessionCollection = sessionCollectionResult;
             
-            // Check if progress record exists
-            map<json> filter = { userId: userId, module: module, topic: topic };
-            stream<record {}, error?>|error findResult = progressCollection->find(filter);
+            // Find session in MongoDB
+            map<json> filter = { token: token };
+            stream<record {}, error?>|error findResult = sessionCollection->find(filter);
             if (findResult is error) {
                 return createResponse(500, "Database query failed", findResult.message());
             }
@@ -910,45 +889,144 @@ public function update_learning_progress(http:Request req, map<map<anydata>> ses
             if (forEachResult is error) {
                 return createResponse(500, "Data processing failed", forEachResult.message());
             }
-
-            if (data.length() == 0) {
-                // Create new progress record
-                LearningProgress progressRecord = {
-                    id: "progress_" + userId + "_" + module + "_" + topic,
-                    userId: userId,
-                    module: module,
-                    topic: topic,
-                    progress: progress,
-                    completedExercises: [],
-                    scores: {},
-                    lastAccessed: time:utcNow().toString(),
-                    timeSpent: 0,
-                    achievements: {}
-                };
+            
+            if (data.length() > 0) {
+                // Session found in MongoDB, restore it to memory and get userId
+                map<anydata> sessionData = <map<anydata>>data[0];
+                anydata userDataField = sessionData["userData"];
                 
-                error? insertResult = progressCollection->insertOne(progressRecord);
-                if (insertResult is error) {
-                    return createResponse(500, "Failed to create progress record", insertResult.message());
+                string userDataString = "";
+                if (userDataField is string) {
+                    userDataString = <string>userDataField;
+                } else if (userDataField is json) {
+                    userDataString = <string>userDataField;
+                } else {
+                    return createResponse(500, "Invalid user data format", "User data is not a string or JSON");
+                }
+                
+                // Parse the JSON string back to map<anydata>
+                json|error jsonResult = userDataString.fromJsonString();
+                if (jsonResult is error) {
+                    return createResponse(500, "Failed to parse user data", "Invalid user data format");
+                }
+                map<anydata>|error userMapResult = <map<anydata>>jsonResult;
+                if (userMapResult is error) {
+                    return createResponse(500, "Failed to convert user data", "Invalid user data structure");
+                }
+                map<anydata> userMap = userMapResult;
+                userId = <string>userMap["id"];
+                
+                // Restore to memory for faster future access
+                sessionStore[token] = userMap;
+                
+                // Update last accessed time
+                map<json> updateFilter = { token: token };
+                map<json> updateFields = { lastAccessed: time:utcNow().toString() };
+                mongodb:Update updateDoc = { "$set": updateFields };
+                var updateResult = sessionCollection->updateOne(updateFilter, updateDoc);
+                if (updateResult is error) {
+                    log:printError("Failed to update session last accessed time: " + updateResult.message());
                 }
             } else {
-                // Update existing progress record
-                map<json> updateFilter = { userId: userId, module: module, topic: topic };
-                map<json> updateFields = {
-                    progress: progress,
-                    lastAccessed: time:utcNow().toString()
-                };
-                
-                mongodb:Update updateDoc = { "$set": updateFields };
-                var updateResult = progressCollection->updateOne(updateFilter, updateDoc);
-                if (updateResult is error) {
-                    return createResponse(500, "Failed to update progress", updateResult.message());
-                }
+                return createResponse(401, "Invalid token", "Session not found");
             }
-            
-            return createResponse(200, "{\"message\": \"Progress updated successfully\", \"progress\": " + progress.toString() + "}", ());
-        } else {
-            return createResponse(401, "Invalid token", "Session not found");
         }
+        
+        // Now we have userId, continue with the progress update
+        json|error payloadOrError = req.getJsonPayload();
+        if (payloadOrError is error) {
+            return createResponse(400, "Invalid JSON payload", "Invalid JSON");
+        }
+
+        json payload = payloadOrError;
+        string module = "";
+        string topic = "";
+        int progress = 0;
+        
+        // Extract fields safely
+        json|error moduleField = payload.module;
+        if (moduleField is string) {
+            module = moduleField;
+        }
+        json|error topicField = payload.topic;
+        if (topicField is string) {
+            topic = topicField;
+        }
+        json|error progressField = payload.progress;
+        if (progressField is int) {
+            progress = progressField;
+        }
+
+        if (module == "" || topic == "") {
+            return createResponse(400, "Missing required fields", "module and topic are required");
+        }
+
+        // Update or create progress record
+        mongodb:Database|error dbResult = mongoClient->getDatabase("learning_platform");
+        if (dbResult is error) {
+            return createResponse(500, "Database connection failed", dbResult.message());
+        }
+        
+        mongodb:Database db = dbResult;
+        mongodb:Collection|error collectionResult = db->getCollection("learning_progress");
+        if (collectionResult is error) {
+            return createResponse(500, "Collection access failed", collectionResult.message());
+        }
+        
+        mongodb:Collection progressCollection = collectionResult;
+        
+        // Check if progress record exists
+        map<json> filter = { userId: userId, module: module, topic: topic };
+        stream<record {}, error?>|error findResult = progressCollection->find(filter);
+        if (findResult is error) {
+            return createResponse(500, "Database query failed", findResult.message());
+        }
+        
+        stream<record {}, error?> resultStream = findResult;
+        record {}[] data = [];
+        error? forEachResult = resultStream.forEach(function(record {} value) {
+            data.push(value);
+        });
+        
+        if (forEachResult is error) {
+            return createResponse(500, "Data processing failed", forEachResult.message());
+        }
+
+        if (data.length() == 0) {
+            // Create new progress record
+            LearningProgress progressRecord = {
+                id: "progress_" + userId + "_" + module + "_" + topic,
+                userId: userId,
+                module: module,
+                topic: topic,
+                progress: progress,
+                completedExercises: [],
+                scores: {},
+                lastAccessed: time:utcNow().toString(),
+                timeSpent: 0,
+                achievements: {}
+            };
+            
+            error? insertResult = progressCollection->insertOne(progressRecord);
+            if (insertResult is error) {
+                return createResponse(500, "Failed to create progress record", insertResult.message());
+            }
+        } else {
+            // Update existing progress record
+            map<json> updateFilter = { userId: userId, module: module, topic: topic };
+            map<json> updateFields = {
+                progress: progress,
+                lastAccessed: time:utcNow().toString()
+            };
+            
+            mongodb:Update updateDoc = { "$set": updateFields };
+            var updateResult = progressCollection->updateOne(updateFilter, updateDoc);
+            if (updateResult is error) {
+                return createResponse(500, "Failed to update progress", updateResult.message());
+            }
+        }
+        
+        return createResponse(200, "{\"message\": \"Progress updated successfully\", \"progress\": " + progress.toString() + "}", ());
     } else {
         return createResponse(401, "Unauthorized", "Missing or invalid authorization header");
     }
@@ -969,7 +1047,7 @@ public function get_learning_progress(http:Request req, map<map<anydata>> sessio
         if (authHeader is string && authHeader.startsWith("Bearer ")) {
             string token = authHeader.substring(7, authHeader.length());
             map<anydata>? userMapOpt = sessionStore[token];
-            if userMapOpt is map<anydata> {
+            if (userMapOpt is map<anydata>) {
                 userId = <string>userMapOpt["id"];
             }
         }
@@ -978,37 +1056,37 @@ public function get_learning_progress(http:Request req, map<map<anydata>> sessio
     if (userId == "") {
         return createResponse(400, "Missing userId", "userId is required either as query parameter or in authorization token");
     }
-            
-            mongodb:Database|error dbResult = mongoClient->getDatabase("learning_platform");
-            if (dbResult is error) {
-                return createResponse(500, "Database connection failed", dbResult.message());
-            }
-            
-            mongodb:Database db = dbResult;
-            mongodb:Collection|error collectionResult = db->getCollection("learning_progress");
-            if (collectionResult is error) {
-                return createResponse(500, "Collection access failed", collectionResult.message());
-            }
-            
-            mongodb:Collection progressCollection = collectionResult;
-            
-            map<json> filter = { userId: userId };
-            stream<record {}, error?>|error findResult = progressCollection->find(filter);
-            if (findResult is error) {
-                return createResponse(500, "Database query failed", findResult.message());
-            }
-            
-            stream<record {}, error?> resultStream = findResult;
-            record {}[] data = [];
-            error? forEachResult = resultStream.forEach(function(record {} value) {
-                data.push(value);
-            });
-            
-            if (forEachResult is error) {
-                return createResponse(500, "Data processing failed", forEachResult.message());
-            }
-            
-            return createResponse(200, "{\"progress\": " + data.toString() + "}", ());
+    
+    mongodb:Database|error dbResult = mongoClient->getDatabase("learning_platform");
+    if (dbResult is error) {
+        return createResponse(500, "Database connection failed", dbResult.message());
+    }
+    
+    mongodb:Database db = dbResult;
+    mongodb:Collection|error collectionResult = db->getCollection("learning_progress");
+    if (collectionResult is error) {
+        return createResponse(500, "Collection access failed", collectionResult.message());
+    }
+    
+    mongodb:Collection progressCollection = collectionResult;
+    
+    map<json> filter = { userId: userId };
+    stream<record {}, error?>|error findResult = progressCollection->find(filter);
+    if (findResult is error) {
+        return createResponse(500, "Database query failed", findResult.message());
+    }
+    
+    stream<record {}, error?> resultStream = findResult;
+    record {}[] data = [];
+    error? forEachResult = resultStream.forEach(function(record {} value) {
+        data.push(value);
+    });
+    
+    if (forEachResult is error) {
+        return createResponse(500, "Data processing failed", forEachResult.message());
+    }
+    
+    return createResponse(200, "{\"progress\": " + data.toString() + "}", ());
 }
 
 // Get networking status
@@ -1027,7 +1105,7 @@ public function save_subnet_exercise_progress(http:Request req, map<map<anydata>
     if (authHeader is string && authHeader.startsWith("Bearer ")) {
         string token = authHeader.substring(7, authHeader.length());
         map<anydata>? userMapOpt = sessionStore[token];
-        if userMapOpt is map<anydata> {
+        if (userMapOpt is map<anydata>) {
             string userId = <string>userMapOpt["id"];
             json|error payloadOrError = req.getJsonPayload();
             if (payloadOrError is error) {
